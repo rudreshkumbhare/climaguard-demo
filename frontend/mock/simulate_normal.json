@@ -1,0 +1,150 @@
+{
+  "inputs_effective": {
+    "rain_mm_hr": 10.0,
+    "surge_m": 0.0,
+    "tide_m": 0.5
+  },
+  "risk": {
+    "hazards": {
+      "rain": 0.08,
+      "surge": 0.0,
+      "tide": 0.125
+    },
+    "baseline": 0.068333,
+    "compound": 0.068333,
+    "level": "Low",
+    "k": 0.85
+  },
+  "flood": {
+    "closed_edge_ids": [],
+    "roads_closed_pct": 0.0,
+    "flooded_nodes": []
+  },
+  "cascade": {
+    "metrics": {
+      "hospitals_isolated": 0,
+      "zones_cut_off": 0,
+      "population_isolated": 0,
+      "avg_extra_km": 0.0,
+      "wcc_count": 1,
+      "largest_wcc_size": 7513
+    },
+    "hospitals": [
+      {
+        "id": "h1",
+        "status": "OPERATIONAL"
+      },
+      {
+        "id": "h2",
+        "status": "OPERATIONAL"
+      },
+      {
+        "id": "h3",
+        "status": "OPERATIONAL"
+      },
+      {
+        "id": "h4",
+        "status": "OPERATIONAL"
+      },
+      {
+        "id": "h5",
+        "status": "OPERATIONAL"
+      },
+      {
+        "id": "h6",
+        "status": "OPERATIONAL"
+      },
+      {
+        "id": "h7",
+        "status": "OPERATIONAL"
+      },
+      {
+        "id": "h8",
+        "status": "OPERATIONAL"
+      }
+    ],
+    "zones": [
+      {
+        "id": "z1",
+        "status": "OK",
+        "nearest_hospital_id": "h1",
+        "nearest_shelter_id": "s7",
+        "extra_km": 0.0,
+        "route": null
+      },
+      {
+        "id": "z2",
+        "status": "OK",
+        "nearest_hospital_id": "h1",
+        "nearest_shelter_id": "s7",
+        "extra_km": 0.0,
+        "route": null
+      },
+      {
+        "id": "z3",
+        "status": "OK",
+        "nearest_hospital_id": "h4",
+        "nearest_shelter_id": "s8",
+        "extra_km": 0.0,
+        "route": null
+      },
+      {
+        "id": "z4",
+        "status": "OK",
+        "nearest_hospital_id": "h2",
+        "nearest_shelter_id": "s6",
+        "extra_km": 0.0,
+        "route": null
+      },
+      {
+        "id": "z5",
+        "status": "OK",
+        "nearest_hospital_id": "h4",
+        "nearest_shelter_id": "s8",
+        "extra_km": 0.0,
+        "route": null
+      },
+      {
+        "id": "z6",
+        "status": "OK",
+        "nearest_hospital_id": "h5",
+        "nearest_shelter_id": "s3",
+        "extra_km": 0.0,
+        "route": null
+      },
+      {
+        "id": "z7",
+        "status": "OK",
+        "nearest_hospital_id": "h6",
+        "nearest_shelter_id": "s6",
+        "extra_km": 0.0,
+        "route": null
+      },
+      {
+        "id": "z8",
+        "status": "OK",
+        "nearest_hospital_id": "h1",
+        "nearest_shelter_id": "s7",
+        "extra_km": 0.0,
+        "route": null
+      },
+      {
+        "id": "z9",
+        "status": "OK",
+        "nearest_hospital_id": "h7",
+        "nearest_shelter_id": "s3",
+        "extra_km": 0.0,
+        "route": null
+      },
+      {
+        "id": "z10",
+        "status": "OK",
+        "nearest_hospital_id": "h1",
+        "nearest_shelter_id": "s7",
+        "extra_km": 0.0,
+        "route": null
+      }
+    ]
+  },
+  "compute_ms": 171.0
+}

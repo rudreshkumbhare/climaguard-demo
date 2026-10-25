@@ -1,0 +1,17 @@
+{
+  "Normal": {
+    "rain_mm_hr": 10,
+    "surge_m": 0.0,
+    "tide_m": 0.5
+  },
+  "Heavy rain": {
+    "rain_mm_hr": 90,
+    "surge_m": 0.0,
+    "tide_m": 1.0
+  },
+  "Compound event (extreme)": {
+    "rain_mm_hr": 90,
+    "surge_m": 2.5,
+    "tide_m": 3.0
+  }
+}
