@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 # ── LLM constants ─────────────────────────────────────────────────────────────
 
-GEMINI_MODEL = "gemini-2.5-flash"          # model name — change here if needed
+GEMINI_MODEL = "gemini-3.8-flash"          # model name — change here if needed
 _GEMINI_TIMEOUT = 8.0                       # seconds
 _MAX_WORDS = 220                            # raised from 180 to allow fuller output
 
