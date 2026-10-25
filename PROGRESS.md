@@ -1,4 +1,4 @@
-Current step: Session C (API) complete
+Current step: Session D, Part 1 complete
 
 ## Done
 
@@ -79,8 +79,27 @@ POST /plan cit   → source=template, zone=Dharavi, message OK
 template fallback→ source=template when GEMINI_API_KEY="" ✅
 ```
 
+### Session D, Part 1 — Frontend Foundation & Layout
+- Created Vite + React + TypeScript application in `frontend/` with Tailwind CSS and Leaflet via `react-leaflet`.
+- `frontend/src/types.ts` — TypeScript types matching §6 API contract exactly (`SimulateRequest`, `SimulateResponse`, `RegionResponse`, `PlanRequest`, `AuthorityPlanResponse`, `CitizenPlanResponse`, `WeatherResponse`, `HealthResponse`, `ErrorResponse`).
+- `frontend/src/data/presets.json` — copied from `mock/presets.json` preserving exact names and parameter values.
+- `frontend/src/api.ts` — client with `USE_MOCK` flag (default `true`):
+  - `getRegion()` loads `mock/region.json`.
+  - `simulate()` loads preset mock via nearest match on rain / compound thresholds.
+  - `plan()` returns plausible mocks for Authority and Citizen modes matching §6.
+  - `getWeatherLive()` returns live weather / cache.
+  - When `USE_MOCK = false`, connects to `http://localhost:8000/api` with fetch.
+- Full-screen three-column layout per §7:
+  - Left controls (300px): Sliders (rain 0–150 mm/hr, surge 0–3 m, tide 0–3 m, what-if rain +% 0–50, sea level rise 0–2 m step 0.1), Authority/Citizen mode toggle, zone dropdown (Citizen only), "Use live weather" button, 3 preset buttons loaded from `presets.json`.
+  - 300 ms debounce on slider adjustments before calling `simulate()`.
+  - Centre map (flexible): Leaflet map placeholder with dark Carto tiles fitted to bbox `[72.82, 19.02, 72.905, 19.095]`.
+  - Right panel (360px): `ThreatGauge`, `CompareBar` (Compound vs Baseline money shot), `MetricCards`, and `PlanPanel` (with AI/template indicator badge).
+  - Footer label: "Simulation on cached Mumbai network. Parameters are scenario assumptions."
+- Dark UI with subtle loading indicator, retaining previous results while recomputing, non-crashing error banner.
+- Verified `npm run build` and started Vite dev server at `http://127.0.0.1:5173/`.
+
 ## Next
-- Session D (frontend): build Vite + React UI against the §6 API contract.
+- Session D, Part 2: Interactive map visualization (rendered roads, red closed roads, blue depth circles for flooded nodes, hospital status badges, zone population markers, green safe reroute polyline).
 
 ## Known bugs
 - None
