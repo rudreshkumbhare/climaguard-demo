@@ -1,0 +1,102 @@
+[
+  {
+    "id": "z1",
+    "name": "Dharavi",
+    "lat": 19.0422,
+    "lon": 72.855,
+    "population": 700000,
+    "vulnerability": 0.95,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 1111890415
+  },
+  {
+    "id": "z2",
+    "name": "Sion",
+    "lat": 19.039,
+    "lon": 72.862,
+    "population": 180000,
+    "vulnerability": 0.7,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 4362786419
+  },
+  {
+    "id": "z3",
+    "name": "Kurla West",
+    "lat": 19.07,
+    "lon": 72.878,
+    "population": 320000,
+    "vulnerability": 0.85,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 4357358503
+  },
+  {
+    "id": "z4",
+    "name": "Kurla East",
+    "lat": 19.065,
+    "lon": 72.889,
+    "population": 260000,
+    "vulnerability": 0.75,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 2246471947
+  },
+  {
+    "id": "z5",
+    "name": "BKC",
+    "lat": 19.0655,
+    "lon": 72.865,
+    "population": 60000,
+    "vulnerability": 0.35,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 2897024711
+  },
+  {
+    "id": "z6",
+    "name": "Bandra East",
+    "lat": 19.06,
+    "lon": 72.848,
+    "population": 150000,
+    "vulnerability": 0.5,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 12784277515
+  },
+  {
+    "id": "z7",
+    "name": "Chunabhatti",
+    "lat": 19.0515,
+    "lon": 72.8805,
+    "population": 110000,
+    "vulnerability": 0.75,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 1642951748
+  },
+  {
+    "id": "z8",
+    "name": "Matunga",
+    "lat": 19.027,
+    "lon": 72.855,
+    "population": 140000,
+    "vulnerability": 0.55,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 245661837
+  },
+  {
+    "id": "z9",
+    "name": "Mahim",
+    "lat": 19.038,
+    "lon": 72.842,
+    "population": 170000,
+    "vulnerability": 0.6,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 10579711469
+  },
+  {
+    "id": "z10",
+    "name": "Wadala",
+    "lat": 19.025,
+    "lon": 72.87,
+    "population": 160000,
+    "vulnerability": 0.65,
+    "note": "Values are approximate estimates for simulation demonstration purposes.",
+    "nearest_node": 7375770587
+  }
+]

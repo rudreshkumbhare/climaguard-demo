@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+httpx
+osmnx
+networkx
+geopandas
+shapely
+numpy
+pandas
+requests
+google-genai
+pytest
