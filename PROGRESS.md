@@ -1,4 +1,4 @@
-Current step: Engine tuning complete (Session B refined)
+Current step: Session C (API) complete
 
 ## Done
 
@@ -39,8 +39,48 @@ Slider Maximums (rain=150, surge=3.0, tide=3.0):
   compound=1.0000  baseline=0.8333  Severe  roads_closed=24.00%
 ```
 
+### Session C — API
+- `backend/app/schemas.py` — Pydantic models for every §6 request and response body:
+  - `SimulateRequest`, `SimulateResponse`, `PlanRequest`, `AuthorityPlanResponse`, `CitizenPlanResponse`, `RegionResponse`, `WeatherResponse`, `HealthResponse`, `ErrorResponse`.
+- `backend/app/state.py` — FastAPI dependency singleton:
+  - Calls `load_data()` + `precompute_baselines()` once in lifespan startup.
+  - Exposes `get_app_state()` dependency and `AppState` typed alias.
+- `backend/app/weather.py` — `GET /weather/live`:
+  - httpx async client, 5-second timeout, Open-Meteo `current=precipitation`.
+  - Falls back to `weather_cache.json` on any failure; creates sample cache if missing.
+  - Updates cache on successful live fetch.
+- `backend/app/plan.py` — `build_plan(simulation, mode, zone_id, facilities, zones)`:
+  - Authority: ranked actions by `population × vulnerability × (2 if CUT_OFF else 1)`.
+  - Action templates: pre-position ambulance, evacuate zone, open shelter, close roads, protect isolated hospital.
+  - Citizen: fact sheet (nearest hospital, shelter, closed road summary) + template message.
+  - Gemini rewrite via `google-genai` SDK if `GEMINI_API_KEY` is set.
+  - Validation: non-empty, ≤ 180 words, no invented hospital/shelter names.
+  - Falls back to Python template silently; always returns `source: "llm" | "template"`.
+- `backend/app/main.py` — FastAPI app:
+  - Lifespan startup: `init_app_state()`.
+  - `GZipMiddleware(minimum_size=1000)` for compressed `/region` and `/simulate` responses.
+  - CORS for `http://localhost:5173` and `http://127.0.0.1:5173`.
+  - Routes: `GET /api/health`, `GET /api/region`, `GET /api/weather/live`, `POST /api/simulate`, `POST /api/plan`.
+  - `§6` error shape `{"error": ..., "detail": ...}` with proper HTTP status codes.
+- `backend/scripts/smoke_test.sh` — 10 curl tests:
+  - All 5 endpoints including `/plan` authority+citizen for Compound event preset.
+  - Error cases: missing `zone_id` (400), bad simulate body (422).
+
+**Smoke test results** (`bash scripts/smoke_test.sh` from `backend/`):
+```
+10 passed, 0 failed
+
+GET /health      → {"status":"ok","nodes":7513,"hospitals":8,"zones":10}
+GET /region      → 8 hospitals, 8 shelters, 10 zones, 10280 road features
+GET /weather/live→ {"rain_mm_hr":0.0,"source":"live","fetched_at":"2026-10-25T17:54:01Z"}
+POST /simulate   → Severe, compound=0.8987, 24% roads closed, 5 hospitals isolated, compute_ms≈60
+POST /plan auth  → source=template, 14 actions
+POST /plan cit   → source=template, zone=Dharavi, message OK
+template fallback→ source=template when GEMINI_API_KEY="" ✅
+```
+
 ## Next
-- Session C (API): implement `schemas.py`, `state.py`, `weather.py`, `plan.py`, `main.py` per SPEC §6.
+- Session D (frontend): build Vite + React UI against the §6 API contract.
 
 ## Known bugs
 - None
@@ -59,4 +99,3 @@ Slider Maximums (rain=150, surge=3.0, tide=3.0):
   - `Normal`: rain=10, surge=0.0, tide=0.5
   - `Heavy rain`: rain=90, surge=0.0, tide=1.0
   - `Compound event (extreme)`: rain=90, surge=2.5, tide=3.0
-
