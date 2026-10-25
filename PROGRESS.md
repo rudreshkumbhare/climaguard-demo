@@ -1,4 +1,4 @@
-Current step: Session B complete (engine)
+Current step: Engine tuning complete (Session B refined)
 
 ## Done
 
@@ -10,45 +10,53 @@ Current step: Session B complete (engine)
   - Robust exponential backoff (5s to 60s, max 6 attempts), HTTP 429 backoff ≥ 30s.
   - Facility extraction (5–10 hospitals, fire stations, shelters) and 10 hand-defined zones.
 
-### Session B — Engine
-- `backend/app/__init__.py` — package marker.
-- `backend/app/config.py` — all constants: K, DRAIN_CAP, MAX_PONDING, CLOSE_THRESHOLD,
-  ELEVATION_FLOOR_M=1.0, normalisation divisors, level thresholds, REROUTE_THRESHOLD,
-  PRESETS (Normal / Heavy rain / Compound event), data paths.
-- `backend/app/risk.py` — `normalise_hazards()`, `compound_risk()` → §6 risk dict shape.
-- `backend/app/flood.py` — `load_data()` (graph string→int IDs, float elevation cast, floor),
-  `compute_flood()` (§5.3 formula with ELEVATION_FLOOR_M, closed edge ids as "{u}-{v}-{key}").
-- `backend/app/cascade.py` — `precompute_baselines()`, `run_cascade()`:
-  weakly-connected components for hospital ISOLATED, directed Dijkstra for routes/extra_km,
-  REROUTED threshold = 5% above baseline or baseline hospital now ISOLATED.
-- `backend/app/engine.py` — `simulate()`: applies what-if, calls risk→flood→cascade,
-  measures compute_ms, returns full §6 /simulate response shape.
-- `backend/scripts/test_engine.py` — 7/7 acceptance tests pass; preset report table.
+### Session B — Engine & Tuning
+- `backend/app/config.py` — single source of truth for all constants and presets:
+  - `K = 0.85`, `RAIN_DIV = 125.0`, `SURGE_DIV = 4.0`, `TIDE_DIV = 4.0`.
+  - `RAIN_LOW_REF_M = 6.0`, `MAX_PONDING = 0.55`, `CLOSE_THRESHOLD = 0.30`, `DRAIN_CAP = 25.0`, `ELEVATION_FLOOR_M = 1.0`.
+  - Presets: Normal, Heavy rain, Compound event (extreme) [surge=2.5, tide=3.0, rain=90].
+- `backend/app/flood.py`:
+  - Bridge exemption: `is_bridge()` checks OSM `bridge` attributes; bridges/flyovers never close (e.g. SCLR Flyover).
+  - Parameterized lowness formula using `RAIN_LOW_REF_M` instead of hardcoded 12.
+- `backend/app/cascade.py`:
+  - Hospital isolation logic: hospital is OPERATIONAL if in largest WCC and largest WCC has ≥ 10% of all nodes; otherwise ISOLATED.
+  - Zone cut-off logic: zone is CUT_OFF if it cannot reach any non-isolated hospital via directed path in flooded graph.
+  - WCC count and largest WCC size reported in metrics.
+- `backend/scripts/test_engine.py`:
+  - 12/12 tests pass (Acceptance tests 1–5 + Regression tests 6–10).
+  - Tests verify: Heavy rain < 20% closed (5.15%), Compound event ≥ 8% above Heavy rain (24.00%, +18.85% margin), 0 bridges closed, Compound event isolates 1–5 hospitals (5 isolated), Compound score uncapped < 1.0 (0.8987).
 
 **Test results** (`python3 scripts/test_engine.py` from `backend/`):
 ```
-7/7 tests passed
+12/12 tests passed
 
 Preset Report:
-  Normal         → compound=0.0889  baseline=0.0889  Low       roads_cls=0.00%   h_iso=0  z_cut=0   pop_iso=0          n_flood=0
-  Heavy rain     → compound=0.4111  baseline=0.4111  Moderate  roads_cls=39.67%  h_iso=8  z_cut=10  pop_iso=2,250,000  n_flood=400
-  Compound event → compound=1.0000  baseline=0.6889  Severe    roads_cls=39.67%  h_iso=8  z_cut=10  pop_iso=2,250,000  n_flood=400
+  Normal                   → compound=0.0683  baseline=0.0683  Low       roads_cls=0.00%   h_iso=0  z_cut=0  wccs=1     largest_wcc=7513  pop_iso=0
+  Heavy rain               → compound=0.3233  baseline=0.3233  Moderate  roads_cls=5.15%   h_iso=0  z_cut=0  wccs=306   largest_wcc=7102  pop_iso=0
+  Compound event (extreme) → compound=0.8987  baseline=0.6983  Severe    roads_cls=24.00%  h_iso=5  z_cut=5  wccs=1571  largest_wcc=4751  pop_iso=650,000
+
+Slider Maximums (rain=150, surge=3.0, tide=3.0):
+  compound=1.0000  baseline=0.8333  Severe  roads_closed=24.00%
 ```
 
-**Observation (not a bug):** Heavy rain closes ~40% of roads and isolates all hospitals/zones
-because the Mumbai study area has many low-elevation nodes (< 12 m) that accumulate rain
-ponding above the 0.30 m CLOSE_THRESHOLD.  The user said "do not tune constants yet" —
-tuning is reserved for a later step.
-
 ## Next
-- Session C (API): `schemas.py`, `state.py`, `weather.py`, `plan.py`, `main.py`.
-- After Session C: tune CLOSE_THRESHOLD / DRAIN_CAP / MAX_PONDING so Heavy rain is
-  visibly different from Compound event in the demo.
+- Session C (API): implement `schemas.py`, `state.py`, `weather.py`, `plan.py`, `main.py` per SPEC §6.
 
 ## Known bugs
 - None
 
-## Tuned values (frozen until tuning step)
-- Study area BBox: `north=19.095, south=19.020, east=72.905, west=72.820`
-- K=2.0, DRAIN_CAP=25, MAX_PONDING=0.8, CLOSE_THRESHOLD=0.30, ELEVATION_FLOOR_M=1.0
-- Elevation source: OpenTopoData SRTM 30m (100 locations per request, 1.2s sleep)
+## Tuned values
+- `RAIN_LOW_REF_M = 6.0 m` — reference elevation below which rain accumulates; covers lower 30% of terrain without inundating high ground.
+- `MAX_PONDING = 0.55 m` — maximum rainfall ponding depth; calibrated so heavy rain ponds 0.48m at 1m elev and 0.16m at 4m elev.
+- `CLOSE_THRESHOLD = 0.30 m` — vehicular stalling threshold (30cm passenger vehicle standard) per SPEC §5.3.
+- `DRAIN_CAP = 25.0 mm/hr` — urban storm drain runoff capacity; rainfall below 25 mm/hr drains without ponding.
+- `ELEVATION_FLOOR_M = 1.0 m` — effective minimum elevation floor preventing numerical division artefacts.
+- `K = 0.85` — synergy multiplier tuned so Compound event reaches 0.8987 (Severe) without hitting the 1.0 ceiling, with margin > 0.20 above baseline.
+- `RAIN_DIV = 125.0 mm/hr` — normalisation scale mapping rain to [0,1]; maps 125 mm/hr cloudburst to 1.0.
+- `SURGE_DIV = 4.0 m` — normalisation scale mapping storm surge to [0,1]; maps 4.0 m severe cyclone surge to 1.0.
+- `TIDE_DIV = 4.0 m` — normalisation scale mapping tide to [0,1]; maps 4.0 m highest astronomical tide to 1.0.
+- `PRESETS`:
+  - `Normal`: rain=10, surge=0.0, tide=0.5
+  - `Heavy rain`: rain=90, surge=0.0, tide=1.0
+  - `Compound event (extreme)`: rain=90, surge=2.5, tide=3.0
+

@@ -11,12 +11,12 @@ FACILITIES_PATH = DATA_DIR / "facilities.json"
 ZONES_PATH      = DATA_DIR / "zones.json"
 
 # ── Risk: synergy amplification (K is tunable, not calibrated) ────────────────
-K: float = 2.0
+K: float = 0.85
 
 # ── Hazard normalisation divisors ─────────────────────────────────────────────
-RAIN_DIV:  float = 100.0   # mm/hr that maps rain to 1.0 (extreme)
-SURGE_DIV: float = 3.0     # metres
-TIDE_DIV:  float = 3.0     # metres above mean sea level
+RAIN_DIV:  float = 125.0  # mm/hr: maps rain to 1.0
+SURGE_DIV: float = 4.0    # metres
+TIDE_DIV:  float = 4.0    # metres above mean sea level
 
 # ── Compound risk level thresholds ────────────────────────────────────────────
 LEVEL_LOW:      float = 0.25   # compound < 0.25  → "Low"
@@ -25,8 +25,9 @@ LEVEL_HIGH:     float = 0.75   # compound < 0.75  → "High"
                                # compound >= 0.75 → "Severe"
 
 # ── Flood model constants ─────────────────────────────────────────────────────
+RAIN_LOW_REF_M:     float = 6.0    # metres: reference elevation below which rain ponding accumulates
 DRAIN_CAP:          float = 25.0   # mm/hr: drain capacity before ponding begins
-MAX_PONDING:        float = 0.8    # metres: maximum rain-driven ponding depth
+MAX_PONDING:        float = 0.55   # metres: maximum rain-driven ponding depth
 CLOSE_THRESHOLD:    float = 0.30   # metres: edge closed when max(depth_u, depth_v) >= this
 ELEVATION_FLOOR_M:  float = 1.0    # metres: effective elevation floor (prevents artefact
                                    # flooding when stored elevation is 0 and all hazards are 0)
@@ -51,9 +52,12 @@ PRESETS: dict[str, dict] = {
         "surge_m":    0.0,
         "tide_m":     1.0,
     },
-    "Compound event": {
+    "Compound event (extreme)": {
         "rain_mm_hr": 90,
-        "surge_m":    1.5,
-        "tide_m":     2.0,
+        "surge_m":    2.5,
+        "tide_m":     3.0,
     },
 }
+# Alias for backwards compatibility if looked up as "Compound event"
+PRESETS["Compound event"] = PRESETS["Compound event (extreme)"]
+

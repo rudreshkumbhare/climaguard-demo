@@ -130,31 +130,21 @@ def run_cascade(data: SimpleNamespace, closed_edges: set[tuple]) -> dict:
             Gf.remove_edge(u, v, key)
 
     # ── 2. Weakly-connected components ────────────────────────────────────────
-    wccs      = list(nx.weakly_connected_components(Gf))
-    node_to_wcc: dict[int, int] = {}
-    for idx, wcc in enumerate(wccs):
-        for n in wcc:
-            node_to_wcc[n] = idx
-
-    # WCC that contains the most zone nearest-nodes = "majority" WCC
-    zone_nodes = [int(z["nearest_node"]) for z in zones]
-    wcc_zone_count: dict[int, int] = {}
-    for zn in zone_nodes:
-        wcc_idx = node_to_wcc.get(zn, -1)
-        wcc_zone_count[wcc_idx] = wcc_zone_count.get(wcc_idx, 0) + 1
-
-    majority_wcc_idx = max(wcc_zone_count, key=wcc_zone_count.get) if wcc_zone_count else -1
+    wccs = list(nx.weakly_connected_components(Gf))
+    total_nodes = G.number_of_nodes()
+    largest_wcc = max(wccs, key=len) if wccs else set()
+    largest_len = len(largest_wcc)
 
     # ── 3. Hospital status ────────────────────────────────────────────────────
-    # ISOLATED  = not in the majority WCC
-    # OPERATIONAL = in the majority WCC
+    # A hospital is ISOLATED if it is not in the largest weakly connected component
+    # of the flooded graph, or its component has fewer than 10% of all nodes.
     hospital_statuses: dict[str, str] = {}
     for h in hospitals:
-        h_node  = int(h["nearest_node"])
-        wcc_idx = node_to_wcc.get(h_node, -1)
-        hospital_statuses[h["id"]] = (
-            "OPERATIONAL" if wcc_idx == majority_wcc_idx else "ISOLATED"
-        )
+        h_node = int(h["nearest_node"])
+        if h_node in largest_wcc and largest_len >= 0.10 * total_nodes:
+            hospital_statuses[h["id"]] = "OPERATIONAL"
+        else:
+            hospital_statuses[h["id"]] = "ISOLATED"
 
     operational_h_nodes: dict[str, int] = {
         h_id: h_node
@@ -263,6 +253,8 @@ def run_cascade(data: SimpleNamespace, closed_edges: set[tuple]) -> dict:
             "zones_cut_off":       cut_off_count,
             "population_isolated": pop_isolated,
             "avg_extra_km":        avg_extra_km,
+            "wcc_count":           len(wccs),
+            "largest_wcc_size":    largest_len,
         },
         "hospitals": [
             {"id": h["id"], "status": hospital_statuses[h["id"]]}

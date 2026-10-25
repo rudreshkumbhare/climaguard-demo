@@ -19,9 +19,36 @@ import numpy as np
 
 from .config import (
     GRAPH_PATH, FACILITIES_PATH, ZONES_PATH,
-    DRAIN_CAP, MAX_PONDING, CLOSE_THRESHOLD, ELEVATION_FLOOR_M,
+    RAIN_LOW_REF_M, DRAIN_CAP, MAX_PONDING, CLOSE_THRESHOLD, ELEVATION_FLOOR_M,
     FLOOD_MIN_DEPTH, MAX_FLOODED_NODES,
 )
+
+
+def is_bridge(edge_data: dict) -> bool:
+    """
+    Check if an edge represents a bridge or flyover.
+    OSM 'bridge' attribute can be string ('yes', 'viaduct', etc.),
+    stringified list (\"['yes']\"), or list. Any non-empty value
+    other than 'no' / 'none' / '0' / 'false' indicates a bridge.
+    """
+    b = edge_data.get("bridge")
+    if not b:
+        return False
+    if isinstance(b, list):
+        return any(str(x).strip().lower() not in ("no", "", "none", "false", "0") for x in b)
+    if isinstance(b, str):
+        b_clean = b.strip()
+        if b_clean.startswith("["):
+            try:
+                import ast
+                parsed = ast.literal_eval(b_clean)
+                if isinstance(parsed, list):
+                    return any(str(x).strip().lower() not in ("no", "", "none", "false", "0") for x in parsed)
+            except Exception:
+                pass
+        return b_clean.lower() not in ("no", "", "none", "false", "0")
+    return bool(b)
+
 
 
 # ── data loading ───────────────────────────────────────────────────────────────
@@ -131,7 +158,7 @@ def compute_flood(
     node_depths: dict[int, float] = {}
     for node, eff_elev in node_elevations.items():
         coastal_depth = max(0.0, water_level - eff_elev)
-        lowness       = _clip((12.0 - eff_elev) / 12.0, 0.0, 1.0)
+        lowness       = _clip((RAIN_LOW_REF_M - eff_elev) / RAIN_LOW_REF_M, 0.0, 1.0)
         rain_depth    = rain_factor * MAX_PONDING * lowness
         node_depths[node] = coastal_depth + rain_depth
 
@@ -140,7 +167,9 @@ def compute_flood(
     closed_edges: set[tuple] = set()
     closed_edge_ids: list[str] = []
 
-    for u, v, key in G.edges(keys=True):
+    for u, v, key, edata in G.edges(keys=True, data=True):
+        if is_bridge(edata):
+            continue
         depth_u = node_depths.get(u, 0.0)
         depth_v = node_depths.get(v, 0.0)
         if max(depth_u, depth_v) >= CLOSE_THRESHOLD:

@@ -85,9 +85,9 @@ climaguard/
 ### 5.1 Hazard normalisation (each to 0..1)
 
 ```
-rain_norm  = clip(rain_mm_hr / 100, 0, 1)      # 100 mm/hr = extreme
-surge_norm = clip(surge_m   / 3,   0, 1)
-tide_norm  = clip(tide_m    / 3,   0, 1)       # tide above mean sea level
+rain_norm  = clip(rain_mm_hr / 125, 0, 1)      # 125 mm/hr = extreme cloudburst
+surge_norm = clip(surge_m   / 4,   0, 1)       # 4.0 m = severe cyclone surge
+tide_norm  = clip(tide_m    / 4,   0, 1)       # tide above mean sea level (4.0 m HAT)
 hazards = [rain_norm, surge_norm, tide_norm]
 ```
 
@@ -96,7 +96,7 @@ hazards = [rain_norm, surge_norm, tide_norm]
 ```
 baseline = mean(hazards)                        # naive "averaging" approach
 synergy  = product(hazards)
-compound = min(1.0, baseline * (1 + K * synergy))   # K = 2.0 default, tunable
+compound = min(1.0, baseline * (1 + K * synergy))   # K = 0.85 default, tunable
 ```
 
 Properties to test: if any hazard is ~0, `compound ≈ baseline`; if all three are high, `compound` is clearly above `baseline`. Level mapping: `<0.25 Low, <0.5 Moderate, <0.75 High, else Severe`.
@@ -106,20 +106,21 @@ State honestly in the video: **K is a tunable parameter, not a calibrated consta
 ### 5.3 Flood depth per node (metres)
 
 ```
-water_level   = tide_m + surge_m                           # relative to mean sea level (SRTM-like datum)
-coastal_depth = max(0, water_level - elevation)
-rain_depth    = clip((rain_mm_hr - DRAIN_CAP)/75, 0, 1) * MAX_PONDING   # DRAIN_CAP=25, MAX_PONDING=0.8
-lowness       = clip((12 - elevation) / 12, 0, 1)
-depth         = coastal_depth + rain_depth * lowness
+water_level    = tide_m + surge_m                           # relative to mean sea level (SRTM-like datum)
+effective_elev = max(elevation, ELEVATION_FLOOR_M)          # ELEVATION_FLOOR_M = 1.0 m
+coastal_depth  = max(0, water_level - effective_elev)
+rain_depth     = clip((rain_mm_hr - DRAIN_CAP)/75, 0, 1) * MAX_PONDING   # DRAIN_CAP=25.0, MAX_PONDING=0.55
+lowness        = clip((RAIN_LOW_REF_M - effective_elev) / RAIN_LOW_REF_M, 0, 1)   # RAIN_LOW_REF_M=6.0
+depth          = coastal_depth + rain_depth * lowness
 ```
 
-An **edge is closed** if `max(depth[u], depth[v]) >= CLOSE_THRESHOLD` (default 0.30 m). Document these as scenario assumptions, not hydrological truth.
+An **edge is closed** if `max(depth[u], depth[v]) >= CLOSE_THRESHOLD` (default 0.30 m). Bridges and flyovers (edges with OSM `bridge` attribute set) never close. Document these as scenario assumptions, not hydrological truth.
 
 ### 5.4 Cascade
 
 1. Copy the base graph, remove closed edges.
 2. For each zone, find the nearest node. For each hospital, find the nearest node.
-3. A zone is **cut off from care** if it cannot reach ANY operating hospital by road. A hospital is **ISOLATED** if its node is not reachable from the main connected component (or from the majority of zones).
+3. Analyze weakly connected components (WCCs) on the flooded graph. A hospital is **ISOLATED** if it is outside the largest weakly connected component, or its component has fewer than 10% of all nodes; otherwise it is **OPERATIONAL**. A zone is **cut off from care** (CUT_OFF) if it cannot reach ANY operating (non-isolated) hospital by directed road path.
 4. For zones that still reach a hospital, compute shortest-path (Dijkstra, weight=`length`) on the flooded graph vs the baseline graph. Report extra distance.
 5. For each affected zone, return the safe route polyline to the nearest reachable hospital, plus the nearest reachable shelter.
 
@@ -274,7 +275,7 @@ Integration:
 |---|---|---|---|
 | Normal | 10 | 0 | 0.5 |
 | Heavy rain | 90 | 0 | 1.0 |
-| Compound event | 90 | 1.5 | 2.0 |
+| Compound event (extreme) | 90 | 2.5 | 3.0 |
 
 Tune the numbers until *Compound event* gives a dramatic but plausible result. Store final values in `config.py` and in the frontend presets.
 
@@ -293,3 +294,5 @@ Rules for every session: follow the contract exactly, ask before changing it, no
 - Say K and thresholds are tunable scenario parameters.
 - Mention LSTM/ARIMA forecasting, SMS fallback, SDMA integration, Redis/PostGIS as the **production roadmap**.
 - Use the measured compute time, not the deck's "under 100 ms" unless you actually hit it.
+- The Compound event is an extreme worst-case stress scenario, and the model covers direct inundation only (not drain backflow).
+
