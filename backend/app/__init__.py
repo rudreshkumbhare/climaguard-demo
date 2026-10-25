@@ -1,0 +1,1 @@
+# ClimáGuard backend package
