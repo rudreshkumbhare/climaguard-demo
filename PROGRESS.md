@@ -1,4 +1,4 @@
-Current step: Session D, Part 1 complete
+Current step: Session D, Part 2 complete
 
 ## Done
 
@@ -98,8 +98,21 @@ template fallback→ source=template when GEMINI_API_KEY="" ✅
 - Dark UI with subtle loading indicator, retaining previous results while recomputing, non-crashing error banner.
 - Verified `npm run build` and started Vite dev server at `http://127.0.0.1:5173/`.
 
+### Session D, Part 2 — Interactive Map Overlays & Rendering
+- Refined `frontend/src/components/MapView.tsx`:
+  - `MapController` dynamically invalidates map container size and executes `map.fitBounds` with padding to `region.bbox` on mount and upon region data loading.
+  - Custom Leaflet panes configured with explicit z-index stacking above the tile pane (200): `roadsPane` (350), `closedRoadsPane` (360), `reroutePane` (370), `floodPane` (380), `zonesPane` (390), `hospitalsPane` (450).
+  - High-performance canvas vector rendering for the 16,724 road features: open roads rendered in grey (`#94a3b8`, opacity 0.5), closed roads matched by `u-v-key` rendered in bright red (`#ff3b30`, weight 4, opacity 1) in `closedRoadsPane`.
+  - Blue flooded node circles (`#38bdf8`, fill opacity 0.5) scaled by water depth.
+  - Zone circles scaled by population with status colors: OK (green), REROUTED (amber), CUT_OFF (red).
+  - Safe reroute paths rendered as bright green polylines (`#22c55e`, weight 4).
+  - Hospital markers rendered as custom large colored `L.divIcon` badges: green with hospital name when OPERATIONAL; prominent red badges with text `ISOLATED` when cut off from care.
+  - Removed temporary dashed bbox rectangle.
+  - Verified dark filter in `index.css` applies strictly to `.leaflet-tile-pane` only.
+  - Zero console errors; verified map and overlays rendering in browser under normal and compound scenarios.
+
 ## Next
-- Session D, Part 2: Interactive map visualization (rendered roads, red closed roads, blue depth circles for flooded nodes, hospital status badges, zone population markers, green safe reroute polyline).
+- Session D, Part 3: Polish and integration tests with real backend API (`USE_MOCK = false`).
 
 ## Known bugs
 - None
