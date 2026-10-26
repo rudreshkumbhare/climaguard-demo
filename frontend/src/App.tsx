@@ -99,25 +99,29 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [params]);
 
-  // 3. Whenever simulation or mode or selectedZone changes, update the plan
+  // 3. Whenever simulation or mode or selectedZone changes, update the plan (debounced)
   useEffect(() => {
     if (!simulation) return;
 
     setPlanLoading(true);
-    getPlan({
-      simulation,
-      mode,
-      zone_id: mode === 'citizen' ? selectedZone : undefined,
-    })
-      .then((planResult) => {
-        setPlan(planResult);
+    const timer = setTimeout(() => {
+      getPlan({
+        simulation,
+        mode,
+        zone_id: mode === 'citizen' ? selectedZone : undefined,
       })
-      .catch((err) => {
-        setError(`Plan error: ${err.message || String(err)}`);
-      })
-      .finally(() => {
-        setPlanLoading(false);
-      });
+        .then((planResult) => {
+          setPlan(planResult);
+        })
+        .catch((err) => {
+          setError(`Plan error: ${err.message || String(err)}`);
+        })
+        .finally(() => {
+          setPlanLoading(false);
+        });
+    }, 250);
+
+    return () => clearTimeout(timer);
   }, [simulation, mode, selectedZone]);
 
   // Preset selection handler

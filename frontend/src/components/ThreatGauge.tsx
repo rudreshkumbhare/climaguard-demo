@@ -7,64 +7,92 @@ interface ThreatGaugeProps {
 
 export const ThreatGauge: React.FC<ThreatGaugeProps> = ({ risk }) => {
   const level = risk?.level || 'Low';
-  const compound = risk ? Math.round(risk.compound * 100) : 0;
-  const baseline = risk ? Math.round(risk.baseline * 100) : 0;
+  const compound = risk ? Math.min(100, Math.max(0, Math.round(risk.compound * 100))) : 0;
+  const baseline = risk ? Math.min(100, Math.max(0, Math.round(risk.baseline * 100))) : 0;
 
-  const getLevelColor = (lvl: string) => {
+  const getColor = (lvl: string) => {
     switch (lvl.toLowerCase()) {
       case 'severe':
-        return 'bg-red-500/20 text-red-400 border-red-500/40';
+        return '#ef4444'; // Red
       case 'high':
-        return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+        return '#f97316'; // Orange
       case 'moderate':
-        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40';
+        return '#eab308'; // Yellow
       default:
-        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+        return '#22c55e'; // Green
     }
   };
 
+  const color = getColor(level);
+  const strokeWidth = 10;
+  const radius = 54;
+  const arcLength = Math.PI * radius; // ~169.6
+  const dashOffset = arcLength * (1 - compound / 100);
+
   return (
-    <div className="bg-dark-800 rounded-lg p-3.5 border border-dark-600 shadow-sm">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold tracking-wider uppercase text-gray-400">
-          Threat Assessment
+    <div className="bg-dark-800 rounded-lg p-3.5 border border-dark-600 shadow-sm flex flex-col items-center">
+      <div className="w-full flex items-center justify-between mb-1">
+        <span className="text-[11px] font-semibold tracking-wider uppercase text-gray-400">
+          Compound Threat Gauge
         </span>
         <span
-          className={`px-2 py-0.5 rounded text-xs font-semibold border ${getLevelColor(
-            level
-          )}`}
+          className="px-2 py-0.5 rounded text-[11px] font-bold border tracking-wide uppercase"
+          style={{
+            borderColor: `${color}66`,
+            backgroundColor: `${color}20`,
+            color: color,
+          }}
         >
           {level}
         </span>
       </div>
 
-      <div className="flex items-baseline justify-between mt-1">
-        <div>
-          <span className="text-2xl font-bold tracking-tight text-white">
+      {/* Semicircle SVG Ring Gauge */}
+      <div className="relative w-44 h-24 flex items-center justify-center mt-1">
+        <svg viewBox="0 0 140 78" className="w-full h-full overflow-visible">
+          {/* Background Track Arc */}
+          <path
+            d="M 16 70 A 54 54 0 0 1 124 70"
+            fill="none"
+            stroke="#21262d"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+          />
+          {/* Active Colored Arc */}
+          <path
+            d="M 16 70 A 54 54 0 0 1 124 70"
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={arcLength}
+            strokeDashoffset={dashOffset}
+            strokeLinecap="round"
+            className="transition-all duration-500 ease-out"
+          />
+        </svg>
+
+        {/* Center Value */}
+        <div className="absolute bottom-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-black tracking-tight text-white leading-none">
             {compound}%
           </span>
-          <span className="text-xs text-gray-400 ml-1.5 font-normal">
-            compound index
+          <span className="text-[10px] text-gray-400 font-medium mt-0.5">
+            Compound Threat
           </span>
-        </div>
-        <div className="text-xs text-gray-400">
-          baseline: <span className="text-gray-200 font-medium">{baseline}%</span>
         </div>
       </div>
 
-      <div className="w-full bg-dark-700 h-2 rounded-full mt-2.5 overflow-hidden">
-        <div
-          className={`h-full transition-all duration-300 ${
-            level.toLowerCase() === 'severe'
-              ? 'bg-red-500'
-              : level.toLowerCase() === 'high'
-              ? 'bg-amber-500'
-              : level.toLowerCase() === 'moderate'
-              ? 'bg-yellow-400'
-              : 'bg-emerald-500'
-          }`}
-          style={{ width: `${Math.min(100, Math.max(2, compound))}%` }}
-        />
+      {/* Footer Metrics */}
+      <div className="w-full flex justify-between items-center text-[11px] pt-2 border-t border-dark-700/60 mt-1">
+        <span className="text-gray-400">
+          Baseline avg: <strong className="text-gray-200">{baseline}%</strong>
+        </span>
+        <span className="text-gray-400">
+          Synergy delta:{' '}
+          <strong className="text-sky-400">
+            +{Math.max(0, compound - baseline)} pts
+          </strong>
+        </span>
       </div>
     </div>
   );

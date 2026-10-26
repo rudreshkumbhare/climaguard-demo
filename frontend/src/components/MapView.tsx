@@ -4,10 +4,11 @@ import {
   TileLayer,
   useMap,
   GeoJSON,
-  CircleMarker,
+  Circle,
   Polyline,
   Marker,
   Tooltip,
+  Popup,
 } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngBoundsExpression } from 'leaflet';
@@ -76,7 +77,7 @@ export const MapView: React.FC<MapViewProps> = ({ region, simulation }) => {
   // Single shared canvas renderer for high-performance vector rendering
   const canvasRenderer = useMemo(() => L.canvas({ padding: 0.5 }), []);
 
-  // 1. Diagnostics console.log as requested
+  // Diagnostics console.log as requested
   const roadsCount = region?.roads?.features?.length ?? 0;
   const closedIdsCount = simulation?.flood?.closed_edge_ids?.length ?? 0;
   const floodedNodesCount = simulation?.flood?.flooded_nodes?.length ?? 0;
@@ -87,7 +88,7 @@ export const MapView: React.FC<MapViewProps> = ({ region, simulation }) => {
     `[MapView] Roads: ${roadsCount}, Closed IDs: ${closedIdsCount}, Flooded nodes: ${floodedNodesCount}, Hospitals: ${hospitalsCount}, Zones: ${zonesCount}`
   );
 
-  // 2. Separate roads into open (grey) and closed (bright red) using properties.id
+  // Separate roads into open (grey) and closed (bright red) using properties.id
   const closedSet = useMemo(
     () => new Set(simulation?.flood?.closed_edge_ids || []),
     [simulation?.flood?.closed_edge_ids]
@@ -191,23 +192,22 @@ export const MapView: React.FC<MapViewProps> = ({ region, simulation }) => {
           );
         })}
 
-        {/* Layer 4: Flooded Nodes in Bright Blue (#38bdf8, fill opacity 0.5, radius scaled by depth_m) */}
+        {/* Layer 4: Flooded Nodes in Bright Blue (#38bdf8, fill opacity 0.25, no stroke, radius 25 to 60m scaled by depth_m) */}
         {simulation?.flood.flooded_nodes.map((node, i) => {
-          const radius = Math.min(
-            16,
-            Math.max(3, Math.round(node.depth_m * 10))
+          const radiusMeters = Math.min(
+            60,
+            Math.max(25, 25 + node.depth_m * 45)
           );
           return (
-            <CircleMarker
+            <Circle
               key={`flood-${i}-${node.lat}-${node.lon}`}
               center={[node.lat, node.lon]}
-              radius={radius}
+              radius={radiusMeters}
               pane="floodPane"
               pathOptions={{
-                color: '#0284c7',
+                stroke: false,
                 fillColor: '#38bdf8',
-                fillOpacity: 0.5,
-                weight: 1,
+                fillOpacity: 0.25,
                 renderer: canvasRenderer,
               }}
             />
@@ -236,15 +236,15 @@ export const MapView: React.FC<MapViewProps> = ({ region, simulation }) => {
           );
 
           return (
-            <CircleMarker
+            <Circle
               key={zone.id}
               center={[zone.lat, zone.lon]}
-              radius={radius}
+              radius={radius * 12}
               pane="zonesPane"
               pathOptions={{
                 color,
                 fillColor,
-                fillOpacity: 0.4,
+                fillOpacity: 0.35,
                 weight: 2,
               }}
             >
@@ -260,11 +260,11 @@ export const MapView: React.FC<MapViewProps> = ({ region, simulation }) => {
                   </div>
                 ) : null}
               </Tooltip>
-            </CircleMarker>
+            </Circle>
           );
         })}
 
-        {/* Layer 6: Hospitals as large coloured divIcon badges (green OPERATIONAL, red ISOLATED) */}
+        {/* Layer 6: Hospital markers: small green "H" when OPERATIONAL; red badge with "H" & "ISOLATED" when ISOLATED */}
         {region?.hospitals.map((hospital) => {
           const statusObj = simulation?.cascade.hospitals.find(
             (h) => h.id === hospital.id
@@ -277,40 +277,43 @@ export const MapView: React.FC<MapViewProps> = ({ region, simulation }) => {
               ? `<div style="
                   display: inline-flex;
                   align-items: center;
-                  gap: 5px;
-                  background: #7f1d1d;
-                  border: 2px solid #ef4444;
-                  border-radius: 6px;
-                  padding: 3px 8px;
+                  gap: 3px;
+                  background: #991b1b;
+                  border: 1.5px solid #f87171;
+                  border-radius: 4px;
+                  padding: 1px 4px;
                   color: #ffffff;
                   font-family: system-ui, -apple-system, sans-serif;
-                  box-shadow: 0 0 16px rgba(239,68,68,0.8), 0 2px 6px rgba(0,0,0,0.8);
-                  white-space: nowrap;
+                  font-size: 9px;
+                  font-weight: 700;
+                  box-shadow: 0 0 8px rgba(239,68,68,0.7), 0 1px 3px rgba(0,0,0,0.8);
                   cursor: pointer;
+                  white-space: nowrap;
                 ">
-                  <span style="background: #ef4444; color: white; border-radius: 3px; padding: 1px 5px; font-weight: 900; font-size: 11px;">H</span>
-                  <span style="font-weight: 800; font-size: 11px; color: #fee2e2; letter-spacing: 0.5px;">ISOLATED</span>
+                  <span style="background: #ef4444; color: white; border-radius: 2px; padding: 0 3px; font-weight: 900; font-size: 9px;">H</span>
+                  <span style="color: #fee2e2; letter-spacing: 0.3px;">ISOLATED</span>
                 </div>`
               : `<div style="
-                  display: inline-flex;
+                  display: flex;
                   align-items: center;
-                  gap: 5px;
-                  background: #14532d;
-                  border: 2px solid #22c55e;
-                  border-radius: 6px;
-                  padding: 3px 7px;
+                  justify-content: center;
+                  width: 20px;
+                  height: 20px;
+                  background: #15803d;
+                  border: 1.5px solid #86efac;
+                  border-radius: 4px;
                   color: #ffffff;
                   font-family: system-ui, -apple-system, sans-serif;
-                  box-shadow: 0 2px 8px rgba(0,0,0,0.7);
-                  white-space: nowrap;
+                  font-weight: 800;
+                  font-size: 11px;
+                  box-shadow: 0 1px 4px rgba(0,0,0,0.6);
                   cursor: pointer;
-                ">
-                  <span style="background: #22c55e; color: #052e16; border-radius: 3px; padding: 1px 5px; font-weight: 900; font-size: 11px;">H</span>
-                  <span style="font-weight: 700; font-size: 11px; color: #f0fdf4;">${hospital.name.split(' ')[0]}</span>
-                </div>`,
-            iconSize: isIsolated ? [96, 28] : [80, 26],
-            iconAnchor: isIsolated ? [48, 14] : [40, 13],
+                ">H</div>`,
+            iconSize: isIsolated ? [68, 18] : [20, 20],
+            iconAnchor: isIsolated ? [34, -4] : [10, -4],
           });
+
+          const shortName = hospital.name.split(' ')[0];
 
           return (
             <Marker
@@ -319,16 +322,30 @@ export const MapView: React.FC<MapViewProps> = ({ region, simulation }) => {
               icon={icon}
               pane="hospitalsPane"
             >
-              <Tooltip direction="top" offset={[0, -12]}>
-                <div className="font-semibold text-xs">{hospital.name}</div>
+              <Tooltip direction="top" offset={[0, -4]}>
+                <div className="font-semibold text-xs">{shortName}</div>
                 <div
-                  className={`text-[11px] font-bold ${
+                  className={`text-[10px] font-bold ${
                     isIsolated ? 'text-red-400' : 'text-emerald-400'
                   }`}
                 >
-                  Status: {statusObj?.status ?? 'OPERATIONAL'}
+                  {statusObj?.status ?? 'OPERATIONAL'}
                 </div>
               </Tooltip>
+              <Popup offset={[0, -4]}>
+                <div className="p-1 font-sans">
+                  <div className="font-bold text-xs text-gray-900 mb-0.5">
+                    {hospital.name}
+                  </div>
+                  <div
+                    className={`text-[11px] font-bold ${
+                      isIsolated ? 'text-red-600' : 'text-emerald-600'
+                    }`}
+                  >
+                    Status: {statusObj?.status ?? 'OPERATIONAL'}
+                  </div>
+                </div>
+              </Popup>
             </Marker>
           );
         })}

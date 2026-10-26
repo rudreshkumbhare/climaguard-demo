@@ -1,4 +1,4 @@
-Current step: Session D, Part 2 complete
+Current step: Session D, Part 3 complete
 
 ## Done
 
@@ -111,8 +111,22 @@ template fallback→ source=template when GEMINI_API_KEY="" ✅
   - Verified dark filter in `index.css` applies strictly to `.leaflet-tile-pane` only.
   - Zero console errors; verified map and overlays rendering in browser under normal and compound scenarios.
 
+### Session D, Part 3 — Right Panel Components & Map Visual Refinements
+- `ThreatGauge.tsx`: Refined into an SVG semicircle ring gauge displaying `risk.compound` as a percentage, threat level label with color coding (Low green, Moderate yellow, High orange, Severe red), and baseline comparison.
+- `CompareBar.tsx`: Built prominent horizontal comparison bars labelled "Independent averaging" (`risk.baseline`) and "ClimaGuard compound model" (`risk.compound`), with "+... pts synergy" badge and an explanatory percentage-point difference caption.
+- `MetricCards.tsx`: Rendered 6 simulation metrics: Hospitals Isolated, Zones Cut Off, Population Isolated (formatted with commas), Roads Closed %, Average Extra Distance, and Compute Time.
+- `PlanPanel.tsx`:
+  - Authority mode: Displays ranked actions as a numbered checklist with target, reason, and estimated people.
+  - Citizen mode: Displays plain-language safety advisory and key facts (nearest open hospital, shelter, closed roads).
+  - Source tag: Displays `✨ AI-assisted` when source is `llm`, and `📋 Rule-based` when source is `template`.
+- `App.tsx`: Debounced `getPlan` re-fetch (250 ms) whenever simulation, mode, or zone selection changes.
+- `MapView.tsx`:
+  - Flood circles: Rendered as subtle, translucent circles (radius 25m to 60m scaled by `depth_m`, `fillOpacity: 0.25`, `stroke: false`) so road lines and reroutes stay crisp and clear.
+  - Hospital badges: Compact green `H` badge when OPERATIONAL with short name on hover and full popup on click; red badge with `H` and `ISOLATED` anchored below the point to prevent overlap.
+- Verified in browser with subagent: components render and update dynamically across Normal, Heavy rain, and Compound event scenarios.
+
 ## Next
-- Session D, Part 3: Polish and integration tests with real backend API (`USE_MOCK = false`).
+- Session D, Part 4: Final verification against real backend API (`USE_MOCK = false`), edge cases, and video recording prep.
 
 ## Known bugs
 - None
