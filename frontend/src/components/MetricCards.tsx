@@ -19,63 +19,54 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ simulation }) => {
   const computeMs = simulation?.compute_ms ?? 0;
 
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {/* 1. Hospitals Isolated */}
-      <div className="bg-dark-800 p-2.5 rounded-lg border border-dark-600">
-        <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-          Hospitals Isolated
+    <div className="bg-dark-800 rounded-lg p-2 border border-dark-600 shadow-sm shrink-0 space-y-1.5">
+      {/* Single row of 4 small metric tiles */}
+      <div className="grid grid-cols-4 gap-1.5">
+        {/* 1. Hospitals Isolated */}
+        <div className="bg-dark-900/80 px-1.5 py-1.5 rounded border border-dark-700/80 text-center">
+          <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide truncate">
+            Hospitals
+          </div>
+          <div className="text-sm font-black mt-0.5">
+            <span className={hospitalsIsolated > 0 ? 'text-red-400' : 'text-emerald-400'}>
+              {hospitalsIsolated}
+            </span>
+            <span className="text-[10px] text-gray-500 font-normal">/{totalHospitals}</span>
+          </div>
         </div>
-        <div className="flex items-baseline gap-1">
-          <span
-            className={`text-lg font-black ${
-              hospitalsIsolated > 0 ? 'text-red-400' : 'text-emerald-400'
-            }`}
-          >
-            {hospitalsIsolated}
-          </span>
-          <span className="text-[11px] text-gray-400 font-medium">
-            / {totalHospitals}
-          </span>
-        </div>
-      </div>
 
-      {/* 2. Zones Cut Off */}
-      <div className="bg-dark-800 p-2.5 rounded-lg border border-dark-600">
-        <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-          Zones Cut Off
+        {/* 2. Zones Cut Off */}
+        <div className="bg-dark-900/80 px-1.5 py-1.5 rounded border border-dark-700/80 text-center">
+          <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide truncate">
+            Zones Cut
+          </div>
+          <div className="text-sm font-black mt-0.5">
+            <span className={zonesCutOff > 0 ? 'text-red-400' : 'text-emerald-400'}>
+              {zonesCutOff}
+            </span>
+            <span className="text-[10px] text-gray-500 font-normal">/{totalZones}</span>
+          </div>
         </div>
-        <div className="flex items-baseline gap-1">
-          <span
-            className={`text-lg font-black ${
-              zonesCutOff > 0 ? 'text-red-400' : 'text-emerald-400'
-            }`}
-          >
-            {zonesCutOff}
-          </span>
-          <span className="text-[11px] text-gray-400 font-medium">
-            / {totalZones}
-          </span>
-        </div>
-      </div>
 
-      {/* 3. Population Isolated */}
-      <div className="bg-dark-800 p-2.5 rounded-lg border border-dark-600">
-        <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-          Pop. Isolated
+        {/* 3. Population Isolated */}
+        <div className="bg-dark-900/80 px-1.5 py-1.5 rounded border border-dark-700/80 text-center">
+          <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide truncate">
+            Pop. Cut
+          </div>
+          <div className="text-sm font-black text-amber-400 mt-0.5 tracking-tight truncate">
+            {populationIsolated >= 1000
+              ? `${(populationIsolated / 1000).toFixed(0)}k`
+              : populationIsolated.toLocaleString()}
+          </div>
         </div>
-        <div className="text-lg font-black text-amber-400 tracking-tight">
-          {populationIsolated.toLocaleString()}
-        </div>
-      </div>
 
-      {/* 4. Roads Closed % */}
-      <div className="bg-dark-800 p-2.5 rounded-lg border border-dark-600">
-        <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-          Roads Closed
-        </div>
-        <div className="flex items-baseline gap-1">
-          <span
-            className={`text-lg font-black ${
+        {/* 4. Roads Closed % */}
+        <div className="bg-dark-900/80 px-1.5 py-1.5 rounded border border-dark-700/80 text-center">
+          <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide truncate">
+            Roads Closed
+          </div>
+          <div
+            className={`text-sm font-black mt-0.5 ${
               roadsClosedPct > 15
                 ? 'text-red-400'
                 : roadsClosedPct > 5
@@ -84,28 +75,18 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ simulation }) => {
             }`}
           >
             {roadsClosedPct.toFixed(1)}%
-          </span>
+          </div>
         </div>
       </div>
 
-      {/* 5. Avg Extra Distance */}
-      <div className="bg-dark-800 p-2.5 rounded-lg border border-dark-600">
-        <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-          Avg. Extra Distance
-        </div>
-        <div className="text-lg font-black text-sky-400 tracking-tight">
-          {avgExtraKm > 0 ? `+${avgExtraKm.toFixed(1)} km` : '0.0 km'}
-        </div>
-      </div>
-
-      {/* 6. Compute Time */}
-      <div className="bg-dark-800 p-2.5 rounded-lg border border-dark-600">
-        <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-          Compute Time
-        </div>
-        <div className="text-lg font-black text-emerald-400 tracking-tight">
-          {computeMs > 0 ? `${computeMs.toFixed(1)} ms` : '--'}
-        </div>
+      {/* Footer line: avg extra distance and compute time */}
+      <div className="flex items-center justify-between text-[10px] text-gray-400 px-1 pt-0.5">
+        <span>
+          Avg reroute: <strong className="text-sky-300">+{avgExtraKm.toFixed(1)} km</strong>
+        </span>
+        <span>
+          Compute: <strong className="text-gray-300">{computeMs.toFixed(0)} ms</strong>
+        </span>
       </div>
     </div>
   );

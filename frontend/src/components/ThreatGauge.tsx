@@ -24,76 +24,73 @@ export const ThreatGauge: React.FC<ThreatGaugeProps> = ({ risk }) => {
   };
 
   const color = getColor(level);
-  const strokeWidth = 10;
-  const radius = 54;
-  const arcLength = Math.PI * radius; // ~169.6
-  const dashOffset = arcLength * (1 - compound / 100);
+  const strokeWidth = 4.5;
+  const radius = 17;
+  const circumference = 2 * Math.PI * radius; // ~106.8
+  const strokeDashoffset = circumference * (1 - compound / 100);
+  const ptsDiff = Math.max(0, compound - baseline);
 
   return (
-    <div className="bg-dark-800 rounded-lg p-3.5 border border-dark-600 shadow-sm flex flex-col items-center">
-      <div className="w-full flex items-center justify-between mb-1">
-        <span className="text-[11px] font-semibold tracking-wider uppercase text-gray-400">
-          Compound Threat Gauge
-        </span>
-        <span
-          className="px-2 py-0.5 rounded text-[11px] font-bold border tracking-wide uppercase"
-          style={{
-            borderColor: `${color}66`,
-            backgroundColor: `${color}20`,
-            color: color,
-          }}
-        >
-          {level}
-        </span>
-      </div>
-
-      {/* Semicircle SVG Ring Gauge */}
-      <div className="relative w-44 h-24 flex items-center justify-center mt-1">
-        <svg viewBox="0 0 140 78" className="w-full h-full overflow-visible">
-          {/* Background Track Arc */}
-          <path
-            d="M 16 70 A 54 54 0 0 1 124 70"
-            fill="none"
-            stroke="#21262d"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-          />
-          {/* Active Colored Arc */}
-          <path
-            d="M 16 70 A 54 54 0 0 1 124 70"
-            fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={arcLength}
-            strokeDashoffset={dashOffset}
-            strokeLinecap="round"
-            className="transition-all duration-500 ease-out"
-          />
-        </svg>
-
-        {/* Center Value */}
-        <div className="absolute bottom-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-black tracking-tight text-white leading-none">
+    <div className="bg-dark-800 rounded-lg px-3 py-2 border border-dark-600 shadow-sm flex items-center justify-between gap-3 shrink-0">
+      {/* Mini Ring Gauge & Main Value */}
+      <div className="flex items-center gap-2.5">
+        <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+          <svg className="w-full h-full -rotate-90">
+            {/* Background Track Circle */}
+            <circle
+              cx="20"
+              cy="20"
+              r={radius}
+              fill="none"
+              stroke="#21262d"
+              strokeWidth={strokeWidth}
+            />
+            {/* Active Colored Arc */}
+            <circle
+              cx="20"
+              cy="20"
+              r={radius}
+              fill="none"
+              stroke={color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              className="transition-all duration-500 ease-out"
+            />
+          </svg>
+          <span className="absolute text-[11px] font-black text-white">
             {compound}%
           </span>
-          <span className="text-[10px] text-gray-400 font-medium mt-0.5">
+        </div>
+
+        {/* Labels & Comparison */}
+        <div>
+          <div className="text-[10px] font-bold tracking-wider uppercase text-gray-300">
             Compound Threat
-          </span>
+          </div>
+          <div className="text-[11px] text-gray-400 flex items-center gap-2 mt-0.5">
+            <span>
+              Baseline: <strong className="text-gray-300 font-medium">{baseline}%</strong>
+            </span>
+            <span className="text-sky-400 font-semibold text-[10px] bg-sky-950/60 px-1.5 py-0.2 rounded border border-sky-800/50">
+              +{ptsDiff} pts synergy
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Footer Metrics */}
-      <div className="w-full flex justify-between items-center text-[11px] pt-2 border-t border-dark-700/60 mt-1">
-        <span className="text-gray-400">
-          Baseline avg: <strong className="text-gray-200">{baseline}%</strong>
-        </span>
-        <span className="text-gray-400">
-          Synergy delta:{' '}
-          <strong className="text-sky-400">
-            +{Math.max(0, compound - baseline)} pts
-          </strong>
-        </span>
-      </div>
+      {/* Level Badge */}
+      <span
+        className="px-2.5 py-1 rounded text-xs font-bold border tracking-wider uppercase shrink-0 shadow-sm"
+        style={{
+          borderColor: `${color}66`,
+          backgroundColor: `${color}20`,
+          color: color,
+        }}
+      >
+        {level}
+      </span>
     </div>
   );
 };

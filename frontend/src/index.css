@@ -4,12 +4,37 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
   height: 100%;
   width: 100%;
-  margin: 0;
-  padding: 0;
+  margin: 0 !important;
+  padding: 0 !important;
   overflow: hidden;
+  background-color: #0d1117 !important;
+  color-scheme: dark;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  background-color: #0d1117 !important;
+  color-scheme: dark;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  background-color: #0d1117 !important;
 }
 
 /* Custom dark scrollbar */

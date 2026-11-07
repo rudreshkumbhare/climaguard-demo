@@ -190,7 +190,7 @@ export const App: React.FC = () => {
   const currentSim = simulation || previousSimulation.current;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-dark-900 text-gray-100 overflow-hidden font-sans">
+    <div className="fixed inset-0 h-full w-full flex flex-col bg-dark-900 text-gray-100 overflow-hidden font-sans">
       {/* ── Top Header Bar ──────────────────────────────────────────────── */}
       <header className="h-12 bg-dark-800 border-b border-dark-600 px-4 flex items-center justify-between shrink-0 z-20">
         <div className="flex items-center gap-3">
@@ -270,8 +270,8 @@ export const App: React.FC = () => {
         {/* Column 2: Centre Map (Flexible) */}
         <MapView region={region} simulation={currentSim} />
 
-        {/* Column 3: Right Panel (360px) */}
-        <aside className="w-[360px] min-w-[360px] max-w-[360px] h-full bg-dark-900 border-l border-dark-600 flex flex-col shrink-0 p-3.5 space-y-3 overflow-y-auto select-none">
+        {/* Column 3: Right Panel (~420px) */}
+        <aside className="w-[420px] min-w-[420px] max-w-[420px] h-full bg-dark-900 border-l border-dark-600 flex flex-col shrink-0 p-3 space-y-2.5 overflow-hidden select-none">
           {/* Threat Gauge */}
           <ThreatGauge risk={currentSim?.risk} />
 

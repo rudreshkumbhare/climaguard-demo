@@ -38,17 +38,17 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
   return (
     <aside className="w-[300px] min-w-[300px] max-w-[300px] h-full bg-dark-800 border-r border-dark-600 flex flex-col shrink-0 select-none overflow-y-auto">
-      <div className="px-4 pt-5 pb-6 space-y-5">
+      <div className="px-3.5 py-3 space-y-3">
         {/* Header & Mode Switch */}
         <div>
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
             Operation Mode
           </div>
-          <div className="grid grid-cols-2 p-1 bg-dark-900 rounded-lg border border-dark-700">
+          <div className="grid grid-cols-2 p-0.5 bg-dark-900 rounded-lg border border-dark-700">
             <button
               type="button"
               onClick={() => onChangeMode('authority')}
-              className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
+              className={`py-1 text-xs font-semibold rounded-md transition-all ${
                 mode === 'authority'
                   ? 'bg-sky-600 text-white shadow-sm'
                   : 'text-gray-400 hover:text-gray-200'
@@ -59,7 +59,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             <button
               type="button"
               onClick={() => onChangeMode('citizen')}
-              className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
+              className={`py-1 text-xs font-semibold rounded-md transition-all ${
                 mode === 'citizen'
                   ? 'bg-sky-600 text-white shadow-sm'
                   : 'text-gray-400 hover:text-gray-200'
@@ -72,10 +72,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* Zone Selector (Citizen Mode only) */}
         {mode === 'citizen' && (
-          <div className="bg-dark-900/60 p-3 rounded-lg border border-dark-700/80 space-y-1.5">
+          <div className="bg-dark-900/60 p-2.5 rounded-lg border border-dark-700/80 space-y-1">
             <label
               htmlFor="zone-select"
-              className="block text-[11px] font-semibold text-sky-400 uppercase tracking-wide"
+              className="block text-[10px] font-semibold text-sky-400 uppercase tracking-wide"
             >
               Select Citizen Zone
             </label>
@@ -83,7 +83,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               id="zone-select"
               value={selectedZone}
               onChange={(e) => onChangeZone(e.target.value)}
-              className="w-full bg-dark-800 border border-dark-600 rounded-md px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-sky-500"
+              className="w-full bg-dark-800 border border-dark-600 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:border-sky-500"
             >
               {zones.length > 0 ? (
                 zones.map((z) => (
@@ -104,12 +104,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* Scenario Presets */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              Scenarios
-            </span>
+          <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+            Scenarios
           </div>
-          <div className="grid grid-cols-1 gap-1.5">
+          <div className="grid grid-cols-1 gap-1">
             {Object.keys(presetsData).map((presetName) => {
               const isSelected = activePreset === presetName;
               return (
@@ -117,7 +115,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   key={presetName}
                   type="button"
                   onClick={() => onSelectPreset(presetName)}
-                  className={`px-3 py-2 text-xs font-medium rounded-lg text-left transition-all border ${
+                  className={`px-2.5 py-1.5 text-xs font-medium rounded-lg text-left transition-all border ${
                     isSelected
                       ? 'bg-sky-950/80 text-sky-200 border-sky-600'
                       : 'bg-dark-900/70 text-gray-300 border-dark-700 hover:border-dark-600 hover:bg-dark-700/50'
@@ -126,7 +124,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">{presetName}</span>
                     {isSelected && (
-                      <span className="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shadow-[0_0_6px_#38bdf8]" />
                     )}
                   </div>
                 </button>
@@ -141,7 +139,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             type="button"
             onClick={onFetchLiveWeather}
             disabled={liveWeatherLoading}
-            className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-dark-700 hover:bg-dark-600 border border-dark-600 text-sky-300 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+            className="w-full py-1.5 px-2.5 text-xs font-semibold rounded-lg bg-dark-700 hover:bg-dark-600 border border-dark-600 text-sky-300 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
           >
             <span>☁️</span>
             {liveWeatherLoading ? 'Fetching Live Data…' : 'Use live weather'}
@@ -149,16 +147,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* Primary Hazard Sliders */}
-        <div className="space-y-4 pt-1 border-t border-dark-700">
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+        <div className="space-y-2.5 pt-2 border-t border-dark-700">
+          <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
             Primary Hazards
           </div>
 
           {/* Rain */}
-          <div className="space-y-1.5">
+          <div className="space-y-0.5">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-300">Rainfall</span>
-              <span className="font-semibold text-white">
+              <span className="text-gray-300 text-[11px]">Rainfall</span>
+              <span className="font-semibold text-white text-[11px]">
                 {params.rain_mm_hr} <span className="text-gray-400 font-normal">mm/hr</span>
               </span>
             </div>
@@ -171,7 +169,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               onChange={(e) => updateField('rain_mm_hr', parseFloat(e.target.value))}
               className="w-full"
             />
-            <div className="flex justify-between text-[10px] text-gray-400">
+            <div className="flex justify-between text-[9px] text-gray-500">
               <span>0</span>
               <span>75</span>
               <span>150</span>
@@ -179,10 +177,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
 
           {/* Storm Surge */}
-          <div className="space-y-1.5">
+          <div className="space-y-0.5">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-300">Storm Surge</span>
-              <span className="font-semibold text-white">
+              <span className="text-gray-300 text-[11px]">Storm Surge</span>
+              <span className="font-semibold text-white text-[11px]">
                 {params.surge_m.toFixed(1)} <span className="text-gray-400 font-normal">m</span>
               </span>
             </div>
@@ -195,7 +193,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               onChange={(e) => updateField('surge_m', parseFloat(e.target.value))}
               className="w-full"
             />
-            <div className="flex justify-between text-[10px] text-gray-400">
+            <div className="flex justify-between text-[9px] text-gray-500">
               <span>0.0m</span>
               <span>1.5m</span>
               <span>3.0m</span>
@@ -203,10 +201,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
 
           {/* High Tide */}
-          <div className="space-y-1.5">
+          <div className="space-y-0.5">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-300">Astronomical Tide</span>
-              <span className="font-semibold text-white">
+              <span className="text-gray-300 text-[11px]">Astronomical Tide</span>
+              <span className="font-semibold text-white text-[11px]">
                 {params.tide_m.toFixed(1)} <span className="text-gray-400 font-normal">m</span>
               </span>
             </div>
@@ -219,7 +217,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               onChange={(e) => updateField('tide_m', parseFloat(e.target.value))}
               className="w-full"
             />
-            <div className="flex justify-between text-[10px] text-gray-400">
+            <div className="flex justify-between text-[9px] text-gray-500">
               <span>0.0m</span>
               <span>1.5m</span>
               <span>3.0m</span>
@@ -228,18 +226,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* What-If Scenarios Sliders */}
-        <div className="space-y-4 pt-3 border-t border-dark-700">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-amber-400/90 uppercase tracking-wider">
-              What-If Stressors
-            </span>
+        <div className="space-y-2.5 pt-2 border-t border-dark-700">
+          <div className="text-[10px] font-semibold text-amber-400/90 uppercase tracking-wider">
+            What-If Stressors
           </div>
 
           {/* Rain Increase % */}
-          <div className="space-y-1.5">
+          <div className="space-y-0.5">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-300">Rain Increase</span>
-              <span className="font-semibold text-amber-400">
+              <span className="text-gray-300 text-[11px]">Rain Increase</span>
+              <span className="font-semibold text-amber-400 text-[11px]">
                 +{params.rain_increase_pct}%
               </span>
             </div>
@@ -252,7 +248,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               onChange={(e) => updateField('rain_increase_pct', parseFloat(e.target.value))}
               className="w-full accent-amber-500"
             />
-            <div className="flex justify-between text-[10px] text-gray-400">
+            <div className="flex justify-between text-[9px] text-gray-500">
               <span>+0%</span>
               <span>+25%</span>
               <span>+50%</span>
@@ -260,10 +256,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
 
           {/* Sea Level Rise */}
-          <div className="space-y-1.5">
+          <div className="space-y-0.5">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-300">Sea Level Rise</span>
-              <span className="font-semibold text-amber-400">
+              <span className="text-gray-300 text-[11px]">Sea Level Rise</span>
+              <span className="font-semibold text-amber-400 text-[11px]">
                 +{params.sea_level_rise_m.toFixed(1)} m
               </span>
             </div>
@@ -276,7 +272,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               onChange={(e) => updateField('sea_level_rise_m', parseFloat(e.target.value))}
               className="w-full accent-amber-500"
             />
-            <div className="flex justify-between text-[10px] text-gray-400">
+            <div className="flex justify-between text-[9px] text-gray-500">
               <span>+0.0m</span>
               <span>+1.0m</span>
               <span>+2.0m</span>

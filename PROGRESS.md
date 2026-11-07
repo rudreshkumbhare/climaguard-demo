@@ -130,6 +130,16 @@ template fallback→ source=template when GEMINI_API_KEY="" ✅
   - Added visible error banner when plan generation fails.
   - Logged `POST /api/plan` request body (`simulation`, `mode`, `zone_id`) and response to console.
   - Guaranteed all 3 facts (nearest open hospital, nearest shelter, closed roads) and safety message always display cleanly in citizen mode.
+- Redesigned Right Column & 1920x1080 Layout:
+  - Eliminated the empty white band at the top by anchoring the root container with `fixed inset-0 h-full w-full` and styling `html, body, #root` with `background-color: #0d1117` and `color-scheme: dark`.
+  - Expanded right panel width to 420px (`w-[420px] min-w-[420px] max-w-[420px]`).
+  - Redesigned `ThreatGauge` into a compact single-row card (40px ring gauge, compound %, baseline %, pts synergy, and threat level badge).
+  - Shortened `CompareBar` and dropped the bottom explanatory sentence, preserving the prominent bars, values, and synergy badge.
+  - Condensed `MetricCards` into a single row of 4 small metric tiles (Hospitals Isolated, Zones Cut Off, Pop. Cut Off, Roads Closed %) with a clean footer line for average extra distance and compute time.
+  - Restructured `PlanPanel` to fill all remaining height (`flex-1 min-h-0 overflow-hidden` with internal scroll `overflow-y-auto`):
+    - In Authority mode: Summary + top 4-5 ranked response actions are fully visible without scrolling at 1920x1080.
+    - In Citizen mode: Zone name, plain-language advisory, and all 3 facts (nearest hospital, nearest shelter, closed roads) are fully visible without scrolling at 1920x1080.
+  - Optimized `ControlPanel` spacing and slider padding so the left controls fit entirely within 1080px (and 900px) height without scrolling, scrolling only if the window height falls below ~720px.
 
 ## Next
 - Session D, Part 4: Final verification against real backend API (`USE_MOCK = false`), edge cases, and video recording prep.
