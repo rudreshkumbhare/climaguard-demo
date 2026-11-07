@@ -12,7 +12,7 @@ import type {
   CitizenPlanResponse,
 } from "./types";
 
-export const USE_MOCK = true;
+export const USE_MOCK = false;
 const API_BASE = "http://localhost:8000/api";
 
 // ── Mock data loaders ────────────────────────────────────────────────────────
@@ -154,8 +154,12 @@ export async function simulate(req: SimulateRequest): Promise<SimulateResponse> 
 
 export async function getPlan(req: PlanRequest): Promise<PlanResponse> {
   if (USE_MOCK) {
-    return loadMockPlan(req);
+    const mock = loadMockPlan(req);
+    console.log("[POST /api/plan mock request body]:", req);
+    console.log("[POST /api/plan mock response]:", mock);
+    return mock;
   }
+  console.log("[POST /api/plan request body]:", req);
   const res = await fetch(`${API_BASE}/plan`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -163,9 +167,12 @@ export async function getPlan(req: PlanRequest): Promise<PlanResponse> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
+    console.error("[POST /api/plan error response]:", res.status, err);
     throw new Error(err.detail || err.error || "Failed to generate plan");
   }
-  return res.json();
+  const data = await res.json();
+  console.log("[POST /api/plan response]:", data);
+  return data;
 }
 
 export async function getWeatherLive(

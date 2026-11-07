@@ -124,6 +124,12 @@ template fallback→ source=template when GEMINI_API_KEY="" ✅
   - Flood circles: Rendered as subtle, translucent circles (radius 25m to 60m scaled by `depth_m`, `fillOpacity: 0.25`, `stroke: false`) so road lines and reroutes stay crisp and clear.
   - Hospital badges: Compact green `H` badge when OPERATIONAL with short name on hover and full popup on click; red badge with `H` and `ISOLATED` anchored below the point to prevent overlap.
 - Verified in browser with subagent: components render and update dynamically across Normal, Heavy rain, and Compound event scenarios.
+- Fixed Citizen Safety Advisory in `PlanPanel.tsx`:
+  - Resolved panel height collapse bug caused by `min-h-0` / `flex-1` nested in `overflow-y-auto` aside, fixing height to `shrink-0 min-h-[260px]` so advisory text and facts are never clipped.
+  - Added "Loading advisory..." spinner state when fetching new plan for citizen mode.
+  - Added visible error banner when plan generation fails.
+  - Logged `POST /api/plan` request body (`simulation`, `mode`, `zone_id`) and response to console.
+  - Guaranteed all 3 facts (nearest open hospital, nearest shelter, closed roads) and safety message always display cleanly in citizen mode.
 
 ## Next
 - Session D, Part 4: Final verification against real backend API (`USE_MOCK = false`), edge cases, and video recording prep.

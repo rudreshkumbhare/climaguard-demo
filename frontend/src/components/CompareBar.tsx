@@ -66,7 +66,7 @@ export const CompareBar: React.FC<CompareBarProps> = ({ risk }) => {
           <span>
             Compound hazard interaction amplifies the threat by{' '}
             <strong className="text-amber-300 font-bold">+{ptsDiff} percentage points</strong>{' '}
-            over naive independent averaging due to simultaneous rainfall runoff and storm surge barrier effects.
+            over naive independent averaging due to simultaneous rainfall, storm surge and high tide.
           </span>
         ) : (
           <span>
