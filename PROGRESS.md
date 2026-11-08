@@ -141,6 +141,35 @@ template fallback→ source=template when GEMINI_API_KEY="" ✅
     - In Citizen mode: Zone name, plain-language advisory, and all 3 facts (nearest hospital, nearest shelter, closed roads) are fully visible without scrolling at 1920x1080.
   - Optimized `ControlPanel` spacing and slider padding so the left controls fit entirely within 1080px (and 900px) height without scrolling, scrolling only if the window height falls below ~720px.
 
+### Demo Safety Hardening
+- `backend/scripts/save_weather_cache.py` — one-off script writing `backend/data/weather_cache.json` with 45 mm/hr monsoon sample; shape matches §6 `GET /weather/live` response exactly; adds `"note": "Recorded monsoon sample for replay"`. No network calls.
+- `backend/app/weather.py` — `fetch_live_weather` updated:
+  - `?replay=true` query param → always returns cached rainy sample, skipping live fetch.
+  - If live call succeeds but rain < 1 mm/hr → returns cached sample with `source: "cache"` (non-dramatic live values suppressed for the demo).
+  - On failure or timeout → cache fallback unchanged.
+- `backend/app/plan.py` — citizen fact string changed from `~N% of local roads closed due to flooding` to `about N% of roads in the study area are closed` using real `roads_closed_pct` from simulation (never hardcoded).
+- `backend/app/main.py` — `GET /weather/live` route accepts optional `replay: bool = False` query param and forwards to `fetch_live_weather`.
+
+**Verified output:**
+```
+# save_weather_cache.py
+Written: backend/data/weather_cache.json
+{ "rain_mm_hr": 45.0, "source": "cache", "fetched_at": "2024-07-26T08:30:00Z",
+  "note": "Recorded monsoon sample for replay" }
+
+# replay=True
+source : cache  |  rain: 45.0 mm/hr  |  note: Recorded monsoon sample for replay
+
+# citizen facts.closed_roads (Compound event, z1)
+['about 24% of roads in the study area are closed']
+
+# citizen message
+⚡ Dharavi: REROUTING IN EFFECT. Threat level: Severe. Your nearest accessible hospital is
+Lokmanya Tilak Municipal General Hospital (Sion Hospital) (route is +0.2 km longer than usual).
+Nearest shelter: Little Angels' High School. about 24% of roads in the study area are closed.
+Avoid flooded roads. Follow authority instructions.
+```
+
 ## Next
 - Session D, Part 4: Final verification against real backend API (`USE_MOCK = false`), edge cases, and video recording prep.
 

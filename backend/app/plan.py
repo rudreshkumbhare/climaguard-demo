@@ -303,7 +303,7 @@ def _build_citizen_facts(
 
     roads_closed_pct = flood.get("roads_closed_pct", 0)
     closed_roads = (
-        [f"~{roads_closed_pct:.0f}% of local roads closed due to flooding"]
+        [f"about {roads_closed_pct:.0f}% of roads in the study area are closed"]
         if roads_closed_pct > 0 else []
     )
 

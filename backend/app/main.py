@@ -185,13 +185,15 @@ def region():
 async def weather_live(
     lat: float = Query(default=19.05, description="Latitude"),
     lon: float = Query(default=72.86, description="Longitude"),
+    replay: bool = Query(default=False, description="Always return the cached rainy sample"),
 ):
     """
     Fetch current precipitation from Open-Meteo (no key required).
-    Falls back to weather_cache.json on any failure.
+    Falls back to weather_cache.json on any failure or when live rain < 1 mm/hr.
+    Pass ?replay=true to always return the cached monsoon sample.
     """
     try:
-        result = await fetch_live_weather(lat, lon)
+        result = await fetch_live_weather(lat, lon, replay=replay)
         return result
     except Exception as exc:
         logger.exception("Unexpected error in /weather/live")
