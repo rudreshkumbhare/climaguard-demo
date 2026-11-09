@@ -144,6 +144,20 @@ template fallback→ source=template when GEMINI_API_KEY="" ✅
   - Added weather source tracking in `App.tsx` and a dedicated tag in `ControlPanel.tsx` next to the "Use live weather" button: shows `"Live (Open-Meteo)"` when live, or `"Replaying recorded monsoon sample (45 mm/hr)"` when cached (never shows fetched_at for cache).
   - Added a `"Weather: recorded sample"` or `"Weather: live"` chip in the header bar next to the Live Backend badge upon fetching weather.
   - Formatted population figures in `MetricCards.tsx` using thousands separators below 1,000,000 (e.g. `650,000`) and one/two decimals with `M` above 1,000,000 (e.g. `2.25M`).
+- Map Hospital Badges & Labels Readability & Fixed Positioning:
+  - Added `LABEL_POSITIONS` table at the top of `MapView.tsx`:
+    - `h1` Sion Hospital: `right`
+    - `h2` Bhabha (Kurla): `right`
+    - `h3` Lilavati: `left`
+    - `h4` Asian Heart: `above`
+    - `h5` Guru Nanak: `left`
+    - `h6` KJ Somaiya: `right`
+    - `h7` SL Raheja: `left`
+    - `h8` Surana Sethia: `above`
+  - Replaced automatic collision code with fixed anchor positions, small coordinates dot, and 1px leader lines styled via CSS classes (`.label-left`, `.label-right`, `.label-above`, `.label-below`).
+  - Compact styling: `font-size: 11px`, `padding: 2px 6px`. Single-line for OPERATIONAL, and single-line for ISOLATED with a small red `ISOLATED` tag on the same line.
+  - Isolated hospital markers draw strictly above operational ones via `zIndexOffset={isIsolated ? 1000 : 0}` and rendering order.
+  - Fitted map tighter to study area with `fitBounds` padding `[20, 20]`, `maxZoom: 14`, `minZoom: 13`, and `maxBounds` bounding box restriction.
 
 ### Demo Safety Hardening
 - `backend/scripts/save_weather_cache.py` — one-off script writing `backend/data/weather_cache.json` with 45 mm/hr monsoon sample; shape matches §6 `GET /weather/live` response exactly; adds `"note": "Recorded monsoon sample for replay"`. No network calls.

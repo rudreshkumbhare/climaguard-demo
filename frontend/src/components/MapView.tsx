@@ -12,12 +12,169 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngBoundsExpression } from 'leaflet';
-import type { RegionResponse, SimulateResponse } from '../types';
+import type { RegionResponse, SimulateResponse, HospitalInfo } from '../types';
 
 interface MapViewProps {
   region?: RegionResponse | null;
   simulation?: SimulateResponse | null;
 }
+
+export type LabelPosition = 'left' | 'right' | 'above' | 'below';
+
+export const LABEL_POSITIONS: Record<string, LabelPosition> = {
+  h1: 'right', // Sion Hospital
+  h2: 'right', // Bhabha (Kurla)
+  h3: 'left', // Lilavati
+  h4: 'above', // Asian Heart
+  h5: 'left', // Guru Nanak
+  h6: 'right', // KJ Somaiya
+  h7: 'left', // SL Raheja
+  h8: 'above', // Surana Sethia
+};
+
+const SHORT_NAMES: Record<string, string> = {
+  h1: 'Sion Hospital',
+  h2: 'Bhabha (Kurla)',
+  h3: 'Lilavati',
+  h4: 'Asian Heart',
+  h5: 'Guru Nanak',
+  h6: 'KJ Somaiya',
+  h7: 'SL Raheja',
+  h8: 'Surana Sethia',
+};
+
+const getShortHospitalName = (id: string, name: string): string => {
+  return SHORT_NAMES[id] || name.slice(0, 14);
+};
+
+const createHospitalIcon = (
+  id: string,
+  name: string,
+  isIsolated: boolean,
+  position: LabelPosition = 'right'
+) => {
+  const shortName = getShortHospitalName(id, name);
+  const badgeColor = isIsolated ? '#ef4444' : '#22c55e';
+  const statusClass = isIsolated ? 'is-isolated' : 'is-operational';
+  const positionClass = `label-${position}`;
+
+  const html = `
+    <div class="hospital-marker-root ${statusClass} ${positionClass}">
+      <!-- Real Coordinates Anchor Dot -->
+      <div class="hospital-marker-dot" style="background: ${badgeColor};"></div>
+
+      <!-- 1px Leader Line from Dot to Pill -->
+      <div class="hospital-leader-line"></div>
+
+      <!-- Compact Hospital Label Pill -->
+      <div class="hospital-marker-pill">
+        <span class="hospital-badge-icon" style="background: ${badgeColor};">H</span>
+        <span class="hospital-short-name">${shortName}</span>
+        ${
+          isIsolated
+            ? `<span class="hospital-isolated-tag">ISOLATED</span>`
+            : ''
+        }
+      </div>
+    </div>
+  `;
+
+  return L.divIcon({
+    className: 'custom-hospital-marker',
+    html,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  });
+};
+
+interface HospitalMarkersProps {
+  hospitals?: HospitalInfo[];
+  simulation?: SimulateResponse | null;
+}
+
+const HospitalMarkers: React.FC<HospitalMarkersProps> = ({
+  hospitals = [],
+  simulation,
+}) => {
+  if (!hospitals || hospitals.length === 0) return null;
+
+  // Requirement 4: Isolated hospitals draw above operational ones
+  // Sort so operational markers render first, isolated markers render last
+  const sortedHospitals = [...hospitals].sort((a, b) => {
+    const aIso =
+      simulation?.cascade.hospitals.find((h) => h.id === a.id)?.status ===
+      'ISOLATED'
+        ? 1
+        : 0;
+    const bIso =
+      simulation?.cascade.hospitals.find((h) => h.id === b.id)?.status ===
+      'ISOLATED'
+        ? 1
+        : 0;
+    return aIso - bIso;
+  });
+
+  return (
+    <>
+      {sortedHospitals.map((hospital) => {
+        const statusObj = simulation?.cascade.hospitals.find(
+          (h) => h.id === hospital.id
+        );
+        const isIsolated = statusObj?.status === 'ISOLATED';
+        const position = LABEL_POSITIONS[hospital.id] || 'right';
+        const elevation =
+          (hospital as any).elevation ?? (hospital as any).elevation_m;
+
+        const icon = createHospitalIcon(
+          hospital.id,
+          hospital.name,
+          isIsolated,
+          position
+        );
+
+        return (
+          <Marker
+            key={`${hospital.id}-${isIsolated}-${position}`}
+            position={[hospital.lat, hospital.lon]}
+            icon={icon}
+            pane="hospitalsPane"
+            zIndexOffset={isIsolated ? 1000 : 0}
+          >
+            <Tooltip direction="top" offset={[0, -6]}>
+              <div className="font-semibold text-xs">{hospital.name}</div>
+              <div
+                className={`text-[10px] font-bold ${
+                  isIsolated ? 'text-red-400' : 'text-emerald-400'
+                }`}
+              >
+                {statusObj?.status ?? 'OPERATIONAL'}
+              </div>
+            </Tooltip>
+            <Popup offset={[0, -4]}>
+              <div className="p-1 font-sans text-gray-900">
+                <div className="font-bold text-xs mb-0.5">
+                  {hospital.name}
+                </div>
+                <div
+                  className={`text-[11px] font-bold ${
+                    isIsolated ? 'text-red-600' : 'text-emerald-600'
+                  }`}
+                >
+                  Status: {statusObj?.status ?? 'OPERATIONAL'}
+                </div>
+                {elevation !== undefined && elevation !== null ? (
+                  <div className="text-[11px] text-gray-600 mt-0.5">
+                    Elevation: {elevation} m
+                  </div>
+                ) : null}
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+    </>
+  );
+};
 
 // Controller for bounds fitting and pane initialization
 const MapController: React.FC<{ bbox?: [number, number, number, number] }> = ({
@@ -33,7 +190,7 @@ const MapController: React.FC<{ bbox?: [number, number, number, number] }> = ({
       { name: 'reroutePane', zIndex: 370 },
       { name: 'floodPane', zIndex: 380 },
       { name: 'zonesPane', zIndex: 390 },
-      { name: 'hospitalsPane', zIndex: 450 },
+      { name: 'hospitalsPane', zIndex: 600 },
     ];
 
     for (const p of customPanes) {
@@ -44,7 +201,7 @@ const MapController: React.FC<{ bbox?: [number, number, number, number] }> = ({
       paneEl.style.zIndex = String(p.zIndex);
     }
 
-    // 2. Fit bounds to region.bbox
+    // 2. Fit bounds to region.bbox tighter with padding [20, 20] and maxZoom 14
     const applyBounds = () => {
       map.invalidateSize();
       if (bbox && bbox.length === 4) {
@@ -53,7 +210,10 @@ const MapController: React.FC<{ bbox?: [number, number, number, number] }> = ({
           [south, west],
           [north, east],
         ];
+        const lBounds = L.latLngBounds([south, west], [north, east]);
         map.fitBounds(bounds, { padding: [20, 20], maxZoom: 14 });
+        map.setMaxBounds(lBounds.pad(0.06));
+        map.setMinZoom(13);
       }
     };
 
@@ -128,7 +288,17 @@ export const MapView: React.FC<MapViewProps> = ({ region, simulation }) => {
     <div className="flex-1 h-full relative bg-[#0b0f19] overflow-hidden">
       <MapContainer
         center={[centerLat, centerLon]}
-        zoom={13}
+        zoom={14}
+        minZoom={13}
+        maxBounds={
+          region?.bbox
+            ? [
+                [region.bbox[1] - 0.005, region.bbox[0] - 0.005],
+                [region.bbox[3] + 0.005, region.bbox[2] + 0.005],
+              ]
+            : undefined
+        }
+        maxBoundsViscosity={0.8}
         className="w-full h-full"
         zoomControl={false}
       >
@@ -264,91 +434,11 @@ export const MapView: React.FC<MapViewProps> = ({ region, simulation }) => {
           );
         })}
 
-        {/* Layer 6: Hospital markers: small green "H" when OPERATIONAL; red badge with "H" & "ISOLATED" when ISOLATED */}
-        {region?.hospitals.map((hospital) => {
-          const statusObj = simulation?.cascade.hospitals.find(
-            (h) => h.id === hospital.id
-          );
-          const isIsolated = statusObj?.status === 'ISOLATED';
-
-          const icon = L.divIcon({
-            className: 'custom-hospital-badge',
-            html: isIsolated
-              ? `<div style="
-                  display: inline-flex;
-                  align-items: center;
-                  gap: 3px;
-                  background: #991b1b;
-                  border: 1.5px solid #f87171;
-                  border-radius: 4px;
-                  padding: 1px 4px;
-                  color: #ffffff;
-                  font-family: system-ui, -apple-system, sans-serif;
-                  font-size: 9px;
-                  font-weight: 700;
-                  box-shadow: 0 0 8px rgba(239,68,68,0.7), 0 1px 3px rgba(0,0,0,0.8);
-                  cursor: pointer;
-                  white-space: nowrap;
-                ">
-                  <span style="background: #ef4444; color: white; border-radius: 2px; padding: 0 3px; font-weight: 900; font-size: 9px;">H</span>
-                  <span style="color: #fee2e2; letter-spacing: 0.3px;">ISOLATED</span>
-                </div>`
-              : `<div style="
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  width: 20px;
-                  height: 20px;
-                  background: #15803d;
-                  border: 1.5px solid #86efac;
-                  border-radius: 4px;
-                  color: #ffffff;
-                  font-family: system-ui, -apple-system, sans-serif;
-                  font-weight: 800;
-                  font-size: 11px;
-                  box-shadow: 0 1px 4px rgba(0,0,0,0.6);
-                  cursor: pointer;
-                ">H</div>`,
-            iconSize: isIsolated ? [68, 18] : [20, 20],
-            iconAnchor: isIsolated ? [34, -4] : [10, -4],
-          });
-
-          const shortName = hospital.name.split(' ')[0];
-
-          return (
-            <Marker
-              key={hospital.id}
-              position={[hospital.lat, hospital.lon]}
-              icon={icon}
-              pane="hospitalsPane"
-            >
-              <Tooltip direction="top" offset={[0, -4]}>
-                <div className="font-semibold text-xs">{shortName}</div>
-                <div
-                  className={`text-[10px] font-bold ${
-                    isIsolated ? 'text-red-400' : 'text-emerald-400'
-                  }`}
-                >
-                  {statusObj?.status ?? 'OPERATIONAL'}
-                </div>
-              </Tooltip>
-              <Popup offset={[0, -4]}>
-                <div className="p-1 font-sans">
-                  <div className="font-bold text-xs text-gray-900 mb-0.5">
-                    {hospital.name}
-                  </div>
-                  <div
-                    className={`text-[11px] font-bold ${
-                      isIsolated ? 'text-red-600' : 'text-emerald-600'
-                    }`}
-                  >
-                    Status: {statusObj?.status ?? 'OPERATIONAL'}
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+        {/* Layer 6: Hospital markers with readable name pills and anti-collision offsets */}
+        <HospitalMarkers
+          hospitals={region?.hospitals}
+          simulation={simulation}
+        />
       </MapContainer>
 
       {/* Region Status Floating Badge */}

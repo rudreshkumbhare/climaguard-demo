@@ -96,7 +96,159 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* Custom divIcon badges reset */
-.leaflet-div-icon {
+.leaflet-div-icon,
+.custom-hospital-marker {
   background: transparent !important;
   border: none !important;
+  overflow: visible !important;
+}
+
+/* Hospital Marker Label Positioning */
+.hospital-marker-root {
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.hospital-marker-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  top: -3px;
+  left: -3px;
+  border: 1px solid #ffffff;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+  z-index: 2;
+}
+
+.hospital-leader-line {
+  position: absolute;
+  background-color: rgba(148, 163, 184, 0.7);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.is-isolated .hospital-leader-line {
+  background-color: rgba(239, 68, 68, 0.75);
+}
+
+.is-operational .hospital-leader-line {
+  background-color: rgba(34, 197, 94, 0.75);
+}
+
+/* 10px offset and 1px leader line for each position */
+.label-right .hospital-leader-line {
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 1px;
+}
+.label-right .hospital-marker-pill {
+  left: 10px;
+  top: 0;
+  transform: translateY(-50%);
+}
+
+.label-left .hospital-leader-line {
+  right: 0;
+  top: 0;
+  width: 10px;
+  height: 1px;
+}
+.label-left .hospital-marker-pill {
+  right: 10px;
+  top: 0;
+  transform: translateY(-50%);
+}
+
+.label-above .hospital-leader-line {
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 10px;
+}
+.label-above .hospital-marker-pill {
+  bottom: 10px;
+  left: 0;
+  transform: translateX(-50%);
+}
+
+.label-below .hospital-leader-line {
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 10px;
+}
+.label-below .hospital-marker-pill {
+  top: 10px;
+  left: 0;
+  transform: translateX(-50%);
+}
+
+/* Compact hospital label pill */
+.hospital-marker-pill {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 2px 6px;
+  border-radius: 9999px;
+  font-size: 11px;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+  pointer-events: auto;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 3;
+}
+
+.is-operational .hospital-marker-pill {
+  border: 1px solid #22c55e;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.is-isolated .hospital-marker-pill {
+  border: 1px solid #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5), 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.hospital-badge-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 9px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.hospital-short-name {
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.hospital-isolated-tag {
+  background: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 0 3px;
+  border-radius: 3px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1.2;
 }
