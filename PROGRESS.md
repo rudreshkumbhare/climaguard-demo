@@ -188,6 +188,42 @@ Nearest shelter: Little Angels' High School. about 24% of roads in the study are
 Avoid flooded roads. Follow authority instructions.
 ```
 
+### All-clear fix in plan.py
+- Added `_is_all_clear(simulation)` helper: returns `True` when `roads_closed_pct < 0.5` AND `hospitals_isolated == 0` AND `zones_cut_off == 0`, reading entirely from the simulation object received by `/plan`.
+- **Authority mode, all_clear:** returns single action `{rank:1, action:"Continue monitoring", target:"All zones", ...}` and summary `"Compound threat level: <level>. No roads closed, all hospitals reachable. No action required. Continue monitoring."` — no "Close and signpost" actions for Normal preset.
+- **Citizen mode, all_clear:** returns message `"<Zone>: No flooding impact right now. Threat level: <level>. All nearby roads are open. Your nearest hospital is <name>. Stay informed and check back if conditions change."` and `closed_roads: ["No roads closed"]`.
+- Heavy rain (5% roads closed, 0 hospitals isolated) is NOT all_clear → still produces "Close and signpost closed roads" actions correctly.
+- Response shape unchanged per §6; source always `"template"` on this path.
+
+**Verified outputs:**
+```
+Normal — authority:
+  source: template | actions: 1
+  1. [Continue monitoring] → All zones
+  summary: Compound threat level: Low. No roads closed, all hospitals reachable. No action required. Continue monitoring.
+
+Normal — citizen z1:
+  zone: Dharavi
+  message: Dharavi: No flooding impact right now. Threat level: Low. All nearby roads are open.
+           Your nearest hospital is Lokmanya Tilak Municipal General Hospital (Sion Hospital).
+           Stay informed and check back if conditions change.
+  closed_roads: ['No roads closed']
+
+Heavy rain — authority:
+  source: template | actions: 5
+  1. [Close and signpost closed roads] → Dharavi
+  2. [Pre-position ambulance ...] → Bhabha Hospital (Kurla)
+  ... (correctly shows road-closure actions)
+
+Compound — authority:
+  source: template | actions: 6
+  1. [Pre-position ambulance ...] → Lokmanya Tilak...
+  3. [Evacuate zone and open emergency shelter] → Wadala
+  ... (correctly shows full emergency actions)
+```
+
+**smoke_test.sh: 10 passed, 0 failed** ✅
+
 ## Next
 - Session D, Part 4: Final verification against real backend API (`USE_MOCK = false`), edge cases, and video recording prep.
 

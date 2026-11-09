@@ -513,6 +513,27 @@ def _validate_llm_output(text: str, facts: dict) -> bool:
     return True
 
 
+# ── All-clear detection ───────────────────────────────────────────────────────
+
+def _is_all_clear(simulation: dict) -> bool:
+    """
+    Return True when conditions are entirely benign:
+      • roads_closed_pct < 0.5 %
+      • hospitals_isolated == 0
+      • zones_cut_off == 0
+
+    All three values are read directly from the /simulate response object.
+    """
+    flood   = simulation.get("flood", {})
+    metrics = simulation.get("cascade", {}).get("metrics", {})
+
+    roads_closed_pct  = float(flood.get("roads_closed_pct", 0))
+    hospitals_isolated = int(metrics.get("hospitals_isolated", 0))
+    zones_cut_off      = int(metrics.get("zones_cut_off", 0))
+
+    return roads_closed_pct < 0.5 and hospitals_isolated == 0 and zones_cut_off == 0
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def build_plan(
@@ -544,6 +565,69 @@ def build_plan(
         logger.info(
             "LLM fallback reason: GEMINI_API_KEY not set or empty — using template."
         )
+
+    all_clear = _is_all_clear(simulation)
+    level     = simulation.get("risk", {}).get("level", "Unknown")
+
+    # ── All-clear fast path ───────────────────────────────────────────────────
+    if all_clear and mode == "authority":
+        logger.info("All-clear: returning monitoring-only authority plan.")
+        return {
+            "mode":   "authority",
+            "source": "template",
+            "actions": [{
+                "rank":       1,
+                "action":     "Continue monitoring",
+                "target":     "All zones",
+                "reason":     "No closed roads and all hospitals reachable",
+                "est_people": 0,
+            }],
+            "summary": (
+                f"Compound threat level: {level}. "
+                "No roads closed, all hospitals reachable. "
+                "No action required. Continue monitoring."
+            ),
+        }
+
+    if all_clear and mode == "citizen":
+        if not zone_id:
+            raise ValueError("zone_id is required for citizen mode")
+        # Look up zone name and nearest hospital for the all-clear message
+        zone      = _zone_by_id(zones, zone_id)
+        zone_name = zone["name"] if zone else zone_id
+
+        cascade      = simulation.get("cascade", {})
+        zone_cascade = {z["id"]: z for z in cascade.get("zones", [])}
+        zc           = zone_cascade.get(zone_id, {})
+
+        names: dict[str, str] = {
+            f["id"]: f["name"]
+            for f in facilities.get("hospitals", []) + facilities.get("shelters", [])
+        }
+        nearest_h_id   = zc.get("nearest_hospital_id")
+        nearest_h_name = names.get(nearest_h_id) if nearest_h_id else None
+        nearest_s_id   = zc.get("nearest_shelter_id")
+        nearest_s_name = names.get(nearest_s_id) if nearest_s_id else None
+
+        h_str = nearest_h_name or "not available"
+        logger.info("All-clear: returning all-clear citizen plan for zone %s.", zone_id)
+        return {
+            "mode":    "citizen",
+            "source":  "template",
+            "zone":    zone_name,
+            "message": (
+                f"{zone_name}: No flooding impact right now. "
+                f"Threat level: {level}. "
+                "All nearby roads are open. "
+                f"Your nearest hospital is {h_str}. "
+                "Stay informed and check back if conditions change."
+            ),
+            "facts": {
+                "nearest_hospital": nearest_h_name,
+                "nearest_shelter":  nearest_s_name,
+                "closed_roads":     ["No roads closed"],
+            },
+        }
 
     if mode == "authority":
         facts   = _build_authority_facts(simulation, facilities, zones)
