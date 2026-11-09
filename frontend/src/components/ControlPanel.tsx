@@ -14,6 +14,7 @@ interface ControlPanelProps {
   liveWeatherLoading: boolean;
   activePreset: string | null;
   onSelectPreset: (name: string) => void;
+  weatherSource?: 'live' | 'cache' | null;
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -28,6 +29,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   liveWeatherLoading,
   activePreset,
   onSelectPreset,
+  weatherSource,
 }) => {
   const updateField = (field: keyof SimulateRequest, value: number) => {
     onChangeParams({
@@ -134,7 +136,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* Live Weather Button */}
-        <div>
+        <div className="space-y-1.5">
           <button
             type="button"
             onClick={onFetchLiveWeather}
@@ -144,6 +146,21 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             <span>☁️</span>
             {liveWeatherLoading ? 'Fetching Live Data…' : 'Use live weather'}
           </button>
+          {weatherSource && (
+            <div className="flex items-center justify-center">
+              <span
+                className={`text-[10px] font-medium px-2 py-0.5 rounded border text-center leading-tight ${
+                  weatherSource === 'live'
+                    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700/70'
+                    : 'bg-amber-950/70 text-amber-300 border-amber-700/70'
+                }`}
+              >
+                {weatherSource === 'live'
+                  ? 'Live (Open-Meteo)'
+                  : 'Replaying recorded monsoon sample (45 mm/hr)'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Primary Hazard Sliders */}

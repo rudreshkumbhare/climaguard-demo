@@ -140,6 +140,10 @@ template fallback→ source=template when GEMINI_API_KEY="" ✅
     - In Authority mode: Summary + top 4-5 ranked response actions are fully visible without scrolling at 1920x1080.
     - In Citizen mode: Zone name, plain-language advisory, and all 3 facts (nearest hospital, nearest shelter, closed roads) are fully visible without scrolling at 1920x1080.
   - Optimized `ControlPanel` spacing and slider padding so the left controls fit entirely within 1080px (and 900px) height without scrolling, scrolling only if the window height falls below ~720px.
+- Weather Source Indicator & Population Formatting:
+  - Added weather source tracking in `App.tsx` and a dedicated tag in `ControlPanel.tsx` next to the "Use live weather" button: shows `"Live (Open-Meteo)"` when live, or `"Replaying recorded monsoon sample (45 mm/hr)"` when cached (never shows fetched_at for cache).
+  - Added a `"Weather: recorded sample"` or `"Weather: live"` chip in the header bar next to the Live Backend badge upon fetching weather.
+  - Formatted population figures in `MetricCards.tsx` using thousands separators below 1,000,000 (e.g. `650,000`) and one/two decimals with `M` above 1,000,000 (e.g. `2.25M`).
 
 ### Demo Safety Hardening
 - `backend/scripts/save_weather_cache.py` — one-off script writing `backend/data/weather_cache.json` with 45 mm/hr monsoon sample; shape matches §6 `GET /weather/live` response exactly; adds `"note": "Recorded monsoon sample for replay"`. No network calls.

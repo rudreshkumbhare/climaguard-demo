@@ -5,6 +5,18 @@ interface MetricCardsProps {
   simulation?: SimulateResponse;
 }
 
+const formatPopulation = (pop: number): string => {
+  if (pop < 1_000_000) {
+    return pop.toLocaleString();
+  }
+  const millions = pop / 1_000_000;
+  const formatted =
+    millions % 1 === 0
+      ? millions.toFixed(0)
+      : parseFloat(millions.toFixed(2)).toString();
+  return `${formatted}M`;
+};
+
 export const MetricCards: React.FC<MetricCardsProps> = ({ simulation }) => {
   const cascade = simulation?.cascade;
   const flood = simulation?.flood;
@@ -53,10 +65,11 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ simulation }) => {
           <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide truncate">
             Pop. Cut
           </div>
-          <div className="text-sm font-black text-amber-400 mt-0.5 tracking-tight truncate">
-            {populationIsolated >= 1000
-              ? `${(populationIsolated / 1000).toFixed(0)}k`
-              : populationIsolated.toLocaleString()}
+          <div
+            className="text-sm font-black text-amber-400 mt-0.5 tracking-tight truncate"
+            title={populationIsolated.toLocaleString()}
+          >
+            {formatPopulation(populationIsolated)}
           </div>
         </div>
 

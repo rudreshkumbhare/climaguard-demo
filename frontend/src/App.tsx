@@ -18,6 +18,7 @@ import type {
   SimulateResponse,
   PlanResponse,
   PresetsMap,
+  WeatherResponse,
 } from './types';
 import presetsDataRaw from './data/presets.json';
 
@@ -52,6 +53,7 @@ export const App: React.FC = () => {
   const [planLoading, setPlanLoading] = useState<boolean>(false);
   const [liveWeatherLoading, setLiveWeatherLoading] = useState<boolean>(false);
   const [planError, setPlanError] = useState<string | null>(null);
+  const [weatherInfo, setWeatherInfo] = useState<WeatherResponse | null>(null);
 
   // Ref to hold previous simulation response while recomputing
   const previousSimulation = useRef<SimulateResponse | null>(null);
@@ -174,6 +176,7 @@ export const App: React.FC = () => {
     setError(null);
     try {
       const weather = await getWeatherLive();
+      setWeatherInfo(weather);
       setActivePreset(null);
       setParams((prev) => ({
         ...prev,
@@ -230,6 +233,26 @@ export const App: React.FC = () => {
               Live Backend
             </span>
           )}
+
+          {/* Weather Source Chip (next to Live Backend badge after click) */}
+          {weatherInfo && (
+            <span
+              className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${
+                weatherInfo.source === 'live'
+                  ? 'bg-sky-950/50 text-sky-300 border-sky-700/60'
+                  : 'bg-amber-950/50 text-amber-300 border-amber-700/60'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  weatherInfo.source === 'live' ? 'bg-sky-400' : 'bg-amber-400'
+                }`}
+              />
+              {weatherInfo.source === 'live'
+                ? 'Weather: live'
+                : 'Weather: recorded sample'}
+            </span>
+          )}
         </div>
       </header>
 
@@ -265,6 +288,7 @@ export const App: React.FC = () => {
           liveWeatherLoading={liveWeatherLoading}
           activePreset={activePreset}
           onSelectPreset={handleSelectPreset}
+          weatherSource={weatherInfo?.source || null}
         />
 
         {/* Column 2: Centre Map (Flexible) */}
