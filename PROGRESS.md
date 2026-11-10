@@ -224,8 +224,29 @@ Compound — authority:
 
 **smoke_test.sh: 10 passed, 0 failed** ✅
 
+### Session D, Part 4 — Configurable API Layer & Automatic Mock Fallback
+- `frontend/src/api.ts`:
+  - `USE_MOCK = import.meta.env.VITE_USE_MOCK === "true"` (defaults to `false`).
+  - `API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"`.
+  - Added `fetchWithTimeout(url, options, 8000)`: 8-second request timeout for all backend calls.
+  - Automatic fallback: when `USE_MOCK` is false and a request is unreachable or times out, smoothly transitions the app to mock mode once and persists it in `sessionStorage` (`climaguard_use_mock_session`) for the rest of the session.
+  - Reactive `subscribeBackendStatus` and `getBackendStatus()`: broadcasts `"connecting"`, `"live"`, or `"mock"`.
+  - Nearest mock simulation matching in normalized hazard space (`rain/125`, `surge/4`, `tide/4`) for all presets and sliders.
+  - Plausible mock action plans for Authority and Citizen modes: includes exact all-clear wording for Normal scenario (`"Continue monitoring"` and `"No flooding impact right now..."`), and ranked emergency actions for active compound/heavy events.
+  - Mock live weather returns 45 mm/hr recorded monsoon sample (`rain_mm_hr: 45.0, source: "cache"`).
+- `frontend/src/App.tsx`:
+  - Dynamic Header Badge:
+    - `"Connecting to server..."` while waiting for the first backend response.
+    - `"Live Backend"` in green when the backend actually responded.
+    - `"Demo mode: cached scenarios"` in amber when running in mock mode or after fallback.
+  - Removed hardcoded `/health` call; status flows naturally through API client requests.
+- `frontend/src/vite-env.d.ts`:
+  - Added environment variable type declarations for `VITE_USE_MOCK`, `VITE_API_URL`, and `VITE_API_BASE`.
+- Build verification: `npm run build` exits 0 with zero warnings/errors.
+- Browser test verification: verified Live Backend status, session fallback to mock mode, Normal all-clear plan, Compound advisory, and weather 45 mm/hr replay button.
+
 ## Next
-- Session D, Part 4: Final verification against real backend API (`USE_MOCK = false`), edge cases, and video recording prep.
+- Session D, Part 5: Video walkthrough & demo recording.
 
 ## Known bugs
 - None

@@ -10,7 +10,9 @@ import {
   simulate,
   getPlan,
   getWeatherLive,
-  USE_MOCK,
+  getBackendStatus,
+  subscribeBackendStatus,
+  type BackendStatus,
 } from './api';
 import type {
   RegionResponse,
@@ -58,30 +60,22 @@ export const App: React.FC = () => {
   // Ref to hold previous simulation response while recomputing
   const previousSimulation = useRef<SimulateResponse | null>(null);
 
-  // Backend connection status (when USE_MOCK is false)
-  const [backendConnected, setBackendConnected] = useState<boolean | null>(
-    USE_MOCK ? null : true
-  );
+  // Backend connection status: 'connecting' | 'live' | 'mock'
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>(getBackendStatus());
+
+  useEffect(() => {
+    const unsubscribe = subscribeBackendStatus(setBackendStatus);
+    return unsubscribe;
+  }, []);
 
   // 1. Fetch static region data once on mount
   useEffect(() => {
     let mounted = true;
 
-    if (!USE_MOCK) {
-      fetch('http://localhost:8000/api/health')
-        .then((res) => {
-          if (mounted) setBackendConnected(res.ok);
-        })
-        .catch(() => {
-          if (mounted) setBackendConnected(false);
-        });
-    }
-
     getRegion()
       .then((data) => {
         if (mounted) {
           setRegion(data);
-          if (!USE_MOCK) setBackendConnected(true);
           if (data.zones && data.zones.length > 0) {
             setSelectedZone(data.zones[0].id);
           }
@@ -89,7 +83,6 @@ export const App: React.FC = () => {
       })
       .catch((err) => {
         if (mounted) {
-          if (!USE_MOCK) setBackendConnected(false);
           setError(`Region load failed: ${err.message || String(err)}`);
         }
       });
@@ -218,19 +211,20 @@ export const App: React.FC = () => {
           )}
 
           {/* Engine Mode Badge */}
-          {USE_MOCK ? (
-            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full border bg-amber-950/50 text-amber-300 border-amber-700/60">
-              Demo Mode (Cached Mocks)
+          {backendStatus === 'connecting' ? (
+            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full border bg-dark-700/80 text-gray-300 border-dark-500 flex items-center gap-1.5 animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+              Connecting to server...
             </span>
-          ) : backendConnected === false ? (
-            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full border bg-red-950/80 text-red-300 border-red-700/80 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-              Backend offline
-            </span>
-          ) : (
+          ) : backendStatus === 'live' ? (
             <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full border bg-emerald-950/50 text-emerald-300 border-emerald-700/60 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               Live Backend
+            </span>
+          ) : (
+            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full border bg-amber-950/50 text-amber-300 border-amber-700/60 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              Demo mode: cached scenarios
             </span>
           )}
 
