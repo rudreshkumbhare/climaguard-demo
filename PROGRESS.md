@@ -245,6 +245,27 @@ Compound — authority:
 - Build verification: `npm run build` exits 0 with zero warnings/errors.
 - Browser test verification: verified Live Backend status, session fallback to mock mode, Normal all-clear plan, Compound advisory, and weather 45 mm/hr replay button.
 
+### Render deployment prep
+- **`backend/requirements-prod.txt`** (new): production-only deps — `fastapi`, `uvicorn[standard]`, `pydantic`, `python-dotenv`, `httpx`, `networkx`, `numpy`, `google-genai`, `pytest`. Excludes `osmnx`, `geopandas`, `shapely`, `pandas`, `requests` (all data-prep only). `requirements.txt` unchanged for `prep_data.py`.
+- **`backend/app/main.py`** — two changes:
+  1. CORS origins now read from env var `CORS_ORIGINS` (comma-separated); defaults to `http://localhost:5173,http://127.0.0.1:5173`. Set `CORS_ORIGINS=https://your-app.onrender.com` on Render.
+  2. Memory logged at startup via `resource.getrusage` (platform-safe: bytes on macOS, KB on Linux).
+- No changes to `flood.py` — it already uses `nx.read_graphml`, never imports osmnx at runtime.
+- Startup confirmed with `--host 0.0.0.0 --port $PORT`.
+
+**Measured memory after startup: 189.2 MB RSS** (well within Render free-tier 512 MB limit).
+
+**Start command for Render:**
+```
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+**Test results:**
+```
+test_engine.py : 12/12 passed
+smoke_test.sh  : 10/10 passed
+```
+
 ## Next
 - Session D, Part 5: Video walkthrough & demo recording.
 

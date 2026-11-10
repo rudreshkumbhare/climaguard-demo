@@ -1,0 +1,13 @@
+# Production dependencies — used by the running server only.
+# For data-prep (prep_data.py), use requirements.txt which includes
+# osmnx, geopandas, shapely, pandas and requests.
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+httpx
+networkx
+numpy
+google-genai
+pytest
+

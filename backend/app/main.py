@@ -14,6 +14,7 @@ GZip: enabled (minimum_size=1000 bytes) for large /region and /simulate response
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -49,6 +50,18 @@ async def lifespan(app: FastAPI):
     logger.info("Loading graph, facilities and zones…")
     init_app_state()
     logger.info("Data loaded. Baselines precomputed. Ready.")
+
+    # Print RSS memory after startup so we can track Render free-tier headroom
+    try:
+        import resource
+        rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        # macOS reports bytes, Linux reports kilobytes
+        import sys
+        rss_mb = rss_kb / (1024 * 1024) if sys.platform == "darwin" else rss_kb / 1024
+        logger.info("Memory after startup: %.1f MB RSS", rss_mb)
+    except Exception:
+        pass
+
     yield
 
 
@@ -64,13 +77,21 @@ app = FastAPI(
 # GZip compression (minimum 1 kB)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+# CORS — origins read from env var CORS_ORIGINS (comma-separated).
+# Default: local Vite dev servers. On Render, set CORS_ORIGINS to your
+# frontend domain, e.g. https://your-app.onrender.com
+_cors_env = os.environ.get("CORS_ORIGINS", "").strip()
+_cors_origins: list[str] = (
+    [o.strip() for o in _cors_env.split(",") if o.strip()]
+    if _cors_env
+    else ["http://localhost:5173", "http://127.0.0.1:5173"]
+)
+logger.info("CORS origins: %s", _cors_origins)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
