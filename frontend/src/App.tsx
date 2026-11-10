@@ -59,6 +59,11 @@ export const App: React.FC = () => {
 
   // Ref to hold previous simulation response while recomputing
   const previousSimulation = useRef<SimulateResponse | null>(null);
+  const previousPlan = useRef<PlanResponse | null>(null);
+
+  // Refs for tracking in-flight simulation request and cancellation
+  const simulateAbortControllerRef = useRef<AbortController | null>(null);
+  const latestSimRequestIdRef = useRef<number>(0);
 
   // Backend connection status: 'connecting' | 'live' | 'mock'
   const [backendStatus, setBackendStatus] = useState<BackendStatus>(getBackendStatus());
@@ -66,6 +71,15 @@ export const App: React.FC = () => {
   useEffect(() => {
     const unsubscribe = subscribeBackendStatus(setBackendStatus);
     return unsubscribe;
+  }, []);
+
+  // Cleanup in-flight simulation request on unmount
+  useEffect(() => {
+    return () => {
+      if (simulateAbortControllerRef.current) {
+        simulateAbortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   // 1. Fetch static region data once on mount
@@ -91,26 +105,50 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // 2. Debounced simulation trigger (300 ms debounce)
+  // 2. Debounced simulation trigger (500 ms debounce after last change)
   useEffect(() => {
+    setSimLoading(true);
+
     const timer = setTimeout(() => {
-      setSimLoading(true);
+      // Cancel previous in-flight request when a new one starts
+      if (simulateAbortControllerRef.current) {
+        simulateAbortControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      simulateAbortControllerRef.current = controller;
+
+      const requestId = ++latestSimRequestIdRef.current;
       setError(null);
 
-      simulate(params)
+      simulate(params, controller.signal)
         .then((simResult) => {
+          // Ignore any response that is not for the latest request
+          if (requestId !== latestSimRequestIdRef.current || controller.signal.aborted) {
+            return;
+          }
           setSimulation(simResult);
           previousSimulation.current = simResult;
         })
-        .catch((err) => {
+        .catch((err: any) => {
+          // Ignore aborted requests
+          if (err.name === 'AbortError' || controller.signal.aborted) {
+            return;
+          }
+          if (requestId !== latestSimRequestIdRef.current) {
+            return;
+          }
           setError(`Simulation error: ${err.message || String(err)}`);
         })
         .finally(() => {
-          setSimLoading(false);
+          if (requestId === latestSimRequestIdRef.current) {
+            setSimLoading(false);
+          }
         });
-    }, 300);
+    }, 500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [params]);
 
   // 3. Whenever simulation or mode or selectedZone changes, update the plan (debounced)
@@ -127,6 +165,7 @@ export const App: React.FC = () => {
       })
         .then((planResult) => {
           setPlan(planResult);
+          previousPlan.current = planResult;
           setPlanError(null);
         })
         .catch((err) => {
@@ -204,9 +243,9 @@ export const App: React.FC = () => {
         <div className="flex items-center gap-3">
           {/* Subtle loading indicator */}
           {(simLoading || planLoading) && (
-            <div className="flex items-center gap-2 text-xs text-sky-400 bg-sky-950/60 border border-sky-800/60 px-2.5 py-1 rounded-full animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-sky-400" />
-              <span>Computing scenario…</span>
+            <div className="flex items-center gap-1.5 text-xs text-sky-400 bg-sky-950/60 border border-sky-800/60 px-2.5 py-1 rounded-full animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+              <span>Updating...</span>
             </div>
           )}
 
@@ -289,7 +328,15 @@ export const App: React.FC = () => {
         <MapView region={region} simulation={currentSim} />
 
         {/* Column 3: Right Panel (~420px) */}
-        <aside className="w-[420px] min-w-[420px] max-w-[420px] h-full bg-dark-900 border-l border-dark-600 flex flex-col shrink-0 p-3 space-y-2.5 overflow-hidden select-none">
+        <aside className="w-[420px] min-w-[420px] max-w-[420px] h-full bg-dark-900 border-l border-dark-600 flex flex-col shrink-0 p-3 space-y-2.5 overflow-hidden select-none relative">
+          {/* Small "Updating..." indicator instead of blanking */}
+          {(simLoading || planLoading) && (
+            <div className="absolute top-2 right-4 z-10 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-950/90 text-sky-300 border border-sky-700/80 shadow-md backdrop-blur-sm animate-pulse pointer-events-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+              <span>Updating...</span>
+            </div>
+          )}
+
           {/* Threat Gauge */}
           <ThreatGauge risk={currentSim?.risk} />
 
@@ -301,7 +348,7 @@ export const App: React.FC = () => {
 
           {/* Plan Panel (Checklist or message with AI/template tag) */}
           <PlanPanel
-            plan={plan}
+            plan={plan || previousPlan.current}
             loading={planLoading}
             mode={mode}
             error={planError}

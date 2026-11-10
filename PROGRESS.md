@@ -266,6 +266,55 @@ test_engine.py : 12/12 passed
 smoke_test.sh  : 10/10 passed
 ```
 
+### Performance Optimisation — POST /simulate speedup
+
+**Goal:** reduce Render free-tier latency (0.1 CPU, ~20x slower than dev laptop) from 2000–4000 ms.
+
+**Profiling (Compound preset, 10-run avg before changes):**
+| Stage | ms | % |
+|---|---|---|
+| graph_copy (G.copy()) | 34.5 | 52% |
+| geometry (route building) | 12.3 | 19% |
+| zone_dijkstra | 10.9 | 16% |
+| closed_edges (Python loop + is_bridge) | 4.8 | 7% |
+| wcc | 2.9 | 4% |
+| flood_depth | 0.8 | 1% |
+
+**Changes made:**
+- **`backend/app/flood.py`**: `load_data()` precomputes numpy arrays at startup (`node_elev_arr`, `node_lat_arr`, `node_lon_arr`, `edge_u_idx`, `edge_v_idx`, `edge_bridge` bool array). `is_bridge()` called once per edge at load, never per request. `compute_flood()` fully vectorised with numpy — no Python loops over nodes or edges per request.
+- **`backend/app/cascade.py`**: No `G.copy()`. Builds a new `nx.MultiDiGraph` from non-closed edges (faster than `subgraph_view` for dense traversal). Uses per-hospital `single_source_dijkstra` on reversed flooded graph (1 pass per hospital → distances to all zone nodes). Per-shelter passes similarly reversed. Route geometry built only for REROUTED zones.
+- **`backend/app/engine.py`**: LRU-style cache (dict, max 256 entries) keyed on `(round(eff_rain,2), round(eff_surge,2), round(eff_tide,2))`. Cache hits return deep copy in <1 ms.
+- **`backend/app/state.py`**: Background daemon thread pre-warms cache for 3 demo presets at startup.
+
+**compute_ms before / after (dev laptop):**
+| Preset | Before (cold) | After (cold) | After (warm/cached) | Speedup (warm) |
+|---|---|---|---|---|
+| Normal | 168.7 ms | 182.8 ms | 0.09 ms | **~1952x** |
+| Heavy rain | 156.6 ms | 169.9 ms | 0.32 ms | **~488x** |
+| Compound event | 54.7 ms | 56.3 ms | 0.50 ms | **~110x** |
+| Random (avg, 20 values) | — | 160 ms | — | — |
+
+On Render at ~20x slower CPU:
+- **Cached preset calls** (after pre-warm): ~2–10 ms (was 2000–4000 ms)
+- **Cold slider values**: ~3200 ms avg (unchanged — Dijkstra dominates)
+
+**Memory after startup:** 189.1 MB RSS (within Render free-tier 512 MB).
+
+**Correctness gate:** `test_engine.py` 12/12 ✅ — all three presets give exact same numbers.
+**Smoke test:** 10/10 ✅
+
+### Slider Interaction Optimization — Debounce, AbortController & Updating Indicators
+- **500 ms Debounce:** Slider-driven `/simulate` calls in `frontend/src/App.tsx` debounced by 500 ms after the last adjustment, preventing request pile-up during rapid drag actions.
+- **In-flight Request Cancellation:**
+  - Integrated `AbortController` in `App.tsx` to automatically cancel any previous in-flight `/simulate` request when a new debounced request starts.
+  - Added request sequence counter (`latestSimRequestIdRef`) to safely ignore any response that does not match the latest request.
+  - Enhanced `fetchWithTimeout` and `simulate` in `frontend/src/api.ts` to forward caller signals and ignore abort errors without erroneously triggering mock mode fallback.
+- **Zero Panel Blanking & "Updating..." Indicators:**
+  - Preserved previous simulation results (`currentSim`) and previous plans (`currentPlan` / `previousPlan.current`) during updates.
+  - Replaced panel blanking with small, elegant `"Updating..."` indicators in the top header bar, the right panel aside (`w-[420px]`), and within `PlanPanel`.
+- Verified production build (`npm run build` exits 0 in 1.75s).
+- Verified via automated headless Chrome tests: rapid slider movements dispatch 0 requests until 500ms after the last change, in-flight requests are successfully aborted, and panels smoothly update without blanking.
+
 ## Next
 - Session D, Part 5: Video walkthrough & demo recording.
 

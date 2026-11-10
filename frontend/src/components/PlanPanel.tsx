@@ -82,7 +82,7 @@ export const PlanPanel: React.FC<PlanPanelProps> = ({
         <div className="flex items-center gap-2">
           {loading && (
             <span className="text-[10px] font-medium text-sky-400 animate-pulse">
-              {plan.mode === 'authority' ? 'Updating…' : 'Loading advisory...'}
+              Updating...
             </span>
           )}
           {/* Tag: "AI-assisted" if llm, "Rule-based" if template */}

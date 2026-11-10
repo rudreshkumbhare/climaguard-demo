@@ -7,16 +7,36 @@ adjustments from the request, calls risk / flood / cascade in order,
 assembles the full §6 response shape, and measures compute_ms with
 time.perf_counter().
 
+Performance: results are cached in an in-memory LRU dict (max 256 entries)
+keyed on (eff_rain rounded to 2 dp, eff_surge rounded to 2 dp, eff_tide
+rounded to 2 dp).  Cache hits skip all computation and return instantly.
+The three presets are pre-warmed at startup in a background thread.
+
 No HTTP, no LLM, no side effects beyond reading data already in `data`.
 """
 from __future__ import annotations
 
+import copy
 import time
 from types import SimpleNamespace
 
 from .risk    import compound_risk
 from .flood   import compute_flood
 from .cascade import run_cascade
+
+# ── LRU-style cache (insertion-order dict, capped at _CACHE_MAX entries) ──────
+_cache: dict[tuple, dict] = {}
+_CACHE_MAX = 256
+
+
+def _cache_key(eff_rain: float, eff_surge: float, eff_tide: float) -> tuple:
+    return (round(eff_rain, 2), round(eff_surge, 2), round(eff_tide, 2))
+
+
+def _evict_oldest() -> None:
+    """Remove the oldest entry if the cache is full."""
+    if len(_cache) >= _CACHE_MAX:
+        _cache.pop(next(iter(_cache)))
 
 
 def simulate(
@@ -56,6 +76,15 @@ def simulate(
     eff_tide  = tide_m + sea_level_rise_m
     eff_surge = surge_m
 
+    # ── cache lookup ─────────────────────────────────────────────────────────
+    key = _cache_key(eff_rain, eff_surge, eff_tide)
+    if key in _cache:
+        cached = _cache[key]
+        # Return a deep copy so mutations by the caller don't corrupt the cache.
+        result = copy.deepcopy(cached)
+        result["compute_ms"] = round((time.perf_counter() - t0) * 1000.0, 1)
+        return result
+
     # ── risk ──────────────────────────────────────────────────────────────────
     risk = compound_risk(eff_rain, eff_surge, eff_tide)
 
@@ -70,7 +99,7 @@ def simulate(
     # ── timing ───────────────────────────────────────────────────────────────
     compute_ms = round((time.perf_counter() - t0) * 1000.0, 1)
 
-    return {
+    result = {
         "inputs_effective": {
             "rain_mm_hr": eff_rain,
             "surge_m":    eff_surge,
@@ -81,3 +110,11 @@ def simulate(
         "cascade":     cascade,
         "compute_ms":  compute_ms,
     }
+
+    # ── cache store ───────────────────────────────────────────────────────────
+    _evict_oldest()
+    # Store without compute_ms so cache entries are timing-independent.
+    to_store = {k: v for k, v in result.items() if k != "compute_ms"}
+    _cache[key] = copy.deepcopy(to_store)
+
+    return result

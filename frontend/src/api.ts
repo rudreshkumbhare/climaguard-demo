@@ -86,18 +86,35 @@ async function fetchWithTimeout(
   options: RequestInit = {},
   timeoutMs = REQUEST_TIMEOUT_MS
 ): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutController = new AbortController();
+  const timer = setTimeout(() => timeoutController.abort(), timeoutMs);
+
+  const callerSignal = options.signal;
+  let onCallerAbort: (() => void) | undefined;
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      clearTimeout(timer);
+      throw new DOMException("The user aborted a request.", "AbortError");
+    }
+    onCallerAbort = () => timeoutController.abort();
+    callerSignal.addEventListener("abort", onCallerAbort, { once: true });
+  }
 
   try {
     const res = await fetch(url, {
       ...options,
-      signal: controller.signal,
+      signal: timeoutController.signal,
     });
     clearTimeout(timer);
+    if (callerSignal && onCallerAbort) {
+      callerSignal.removeEventListener("abort", onCallerAbort);
+    }
     return res;
   } catch (err) {
     clearTimeout(timer);
+    if (callerSignal && onCallerAbort) {
+      callerSignal.removeEventListener("abort", onCallerAbort);
+    }
     throw err;
   }
 }
@@ -337,7 +354,10 @@ export async function getRegion(): Promise<RegionResponse> {
   }
 }
 
-export async function simulate(req: SimulateRequest): Promise<SimulateResponse> {
+export async function simulate(
+  req: SimulateRequest,
+  signal?: AbortSignal
+): Promise<SimulateResponse> {
   if (isMockActive()) {
     return loadMockSimulate(req);
   }
@@ -346,6 +366,7 @@ export async function simulate(req: SimulateRequest): Promise<SimulateResponse> 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req),
+      signal,
     });
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -353,7 +374,10 @@ export async function simulate(req: SimulateRequest): Promise<SimulateResponse> 
     const data = await res.json();
     notifyBackendSuccess();
     return data;
-  } catch (err) {
+  } catch (err: any) {
+    if (signal?.aborted || err.name === "AbortError") {
+      throw err;
+    }
     console.warn("[ClimaGuard API] Backend unreachable or timed out for /simulate. Switching to mock mode.", err);
     switchToMockMode();
     return loadMockSimulate(req);
